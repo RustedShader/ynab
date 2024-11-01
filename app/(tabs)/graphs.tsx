@@ -9,64 +9,8 @@ import {
     SafeAreaView
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
-import { useNavigation } from "expo-router";
-import { NavigationProp } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
-
-
-// Define TypeScript interfaces for the API response
-export interface finvu {
-    Account: Account;
-}
-
-export interface Account {
-    Profile: Profile;
-    Summary: Summary;
-    Transactions: Transactions;
-    _maskedAccNumber: string;
-    _type: string;
-}
-
-export interface Profile {
-    Holders: Holders;
-}
-
-export interface Holders {
-    Holder: Holder;
-}
-
-export interface Holder {
-    _name: string;
-    _dob: string;
-    _mobile: string;
-    _email: string;
-    _pan: string;
-}
-
-export interface Summary {
-    _currentBalance: string;
-    _currency: string;
-    _ifscCode: string;
-    _branch: string;
-    _openingDate: string;
-    _status: string;
-}
-
-export interface Transactions {
-    Transaction?: TransactionEntity[] | null;
-    _startDate: string;
-    _endDate: string;
-}
-
-export interface TransactionEntity {
-    _txnId: string;
-    _type: string;
-    _amount: string;
-    _currentBalance: string;
-    _narration: string;
-    _valueDate: string;
-    _transactionTimestamp: string;
-}
+import { finvu , TransactionEntity } from "@/interfaces/ynab_api";
 
 const { width } = Dimensions.get("window");
 const username = "dhaniya";
@@ -74,28 +18,22 @@ const username = "dhaniya";
 const Graphs = () => {
     const [accountData, setAccountData] = useState<finvu | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
-    const navigation = useNavigation<NavigationProp<any>>();
 
     const commonChartConfig = {
-        backgroundGradientFrom: "#ffffff",
-        backgroundGradientTo: "#ffffff",
+        backgroundColor: '#111111',
+        backgroundGradientFrom: '#111111',
+        backgroundGradientTo: '#111111',
         decimalPlaces: 0,
-        color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        style: {
-            borderRadius: 16,
-        },
-        propsForDots: {
-            r: "4",
-            strokeWidth: "2",
-            stroke: "#6366f1"
-        },
+        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
         propsForLabels: {
-            fontSize: 10,
+            fontSize: 12,
         },
-        strokeWidth: 2,
-        barPercentage: 0.5,
-        useShadowColorFromDataset: false
+        propsForVerticalLabels: {
+            fontSize: 12,
+        },
+        propsForHorizontalLabels: {
+            fontSize: 12,
+        },
     };
 
     const fetchUserData = async () => {
@@ -198,8 +136,7 @@ const Graphs = () => {
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.scrollView}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Financial Analytics</Text>
-                    <Text style={styles.headerSubtitle}>Last 7 days overview</Text>
+                    <Text style={styles.headerTitle}>Graphical Overview</Text>
                 </View>
 
                 <View style={styles.chartSection}>
@@ -212,7 +149,7 @@ const Graphs = () => {
                             height={220}
                             chartConfig={{
                                 ...commonChartConfig,
-                                color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+                                color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`,
                             }}
                             bezier
                             style={styles.chart}
@@ -244,7 +181,7 @@ const Graphs = () => {
                             height={220}
                             chartConfig={{
                                 ...commonChartConfig,
-                                color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
+                                color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
                             }}
                             bezier
                             style={styles.chart}
@@ -259,7 +196,7 @@ const Graphs = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#000000',
     },
     scrollView: {
         flex: 1,
@@ -268,46 +205,88 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: '#000000',
     },
     loadingText: {
         marginTop: 16,
-        color: '#666',
+        color: '#ffffff',
         fontSize: 16,
+        fontWeight: '500',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: 'white',
+        backgroundColor: '#000000',
     },
     errorTitle: {
         marginTop: 16,
         fontSize: 18,
         fontWeight: '600',
-        color: '#ef4444',
+        color: '#ffffff',
     },
     errorMessage: {
         marginTop: 8,
-        color: '#666',
+        color: '#888',
         textAlign: 'center',
     },
     header: {
-        backgroundColor: '#6366f1',
         padding: 24,
-        borderBottomRightRadius: 24,
-        borderBottomLeftRadius: 24,
+        shadowColor: '#ffffff',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
+        fontSize: 26,
+        fontWeight: '900',
+        color: '#f0f0f0',
         marginBottom: 4,
     },
-    headerSubtitle: {
+    balanceCardContainer: {
+        marginHorizontal: 16,
+        marginTop: -24,
+    },
+    summaryContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 16,
+    },
+    summaryCard: {
+        width: '48%',
+        padding: 20,
+        borderRadius: 16,
+        backgroundColor: '#111111',
+        shadowColor: '#ffffff',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    outflowCard: {
+        borderLeftWidth: 3,
+        borderLeftColor: '#EF4444',
+    },
+    inflowCard: {
+        borderLeftWidth: 3,
+        borderLeftColor: '#10B981',
+    },
+    summaryLabel: {
         fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: '#888',
+        marginBottom: 8,
+        fontWeight: '500',
+    },
+    balanceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    summaryAmount: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#ffffff',
     },
     chartSection: {
         paddingHorizontal: 16,
@@ -315,15 +294,12 @@ const styles = StyleSheet.create({
         paddingBottom: 32,
     },
     chartCard: {
-        backgroundColor: 'white',
+        backgroundColor: '#111111',
         borderRadius: 16,
         padding: 16,
         marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowColor: '#ffffff',
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3.84,
         elevation: 5,
@@ -331,12 +307,12 @@ const styles = StyleSheet.create({
     chartTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#111',
+        color: '#ffffff',
         marginBottom: 4,
     },
     chartSubtitle: {
         fontSize: 14,
-        color: '#666',
+        color: '#888',
         marginBottom: 16,
     },
     chart: {
