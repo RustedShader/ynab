@@ -5,7 +5,7 @@ export interface finvu {
 export interface Account {
     Profile: Profile;
     Summary: Summary;
-    Transactions: Transactions;
+    Transactions: Transactions ;
     _maskedAccNumber: string;
     _type: string;
 }
