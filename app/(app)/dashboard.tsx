@@ -9,7 +9,8 @@ import {
     Dimensions,
     SafeAreaView,
     Image,
-    Animated
+    Animated,
+    Linking
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -337,6 +338,7 @@ const Dashboard = () => {
                                 pressed && styles.newsPressed,
                                 index !== 0 && styles.newsBorder
                             ]}
+                            onPress={() => Linking.openURL(d.url)}
                         >
                             <Image
                                 source={{ uri: d.image_url }}
