@@ -139,6 +139,7 @@ const loadTransactionSorter = async () => {
         />
         <ActivityIndicator size="large" color="#8257e5" />
         <Text style={styles.loadingText}>Linking Your Bank Account ...</Text>
+        <Text style={styles.loadingText}>Usually takes some time</Text>
       </View>
     );
   }

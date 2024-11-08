@@ -27,6 +27,14 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="chatbot"
+        options={{
+          headerShown: false,
+          headerBackTitle: "Dashboard",
+          title: "Chatbot",
+        }}
+      />
+      <Stack.Screen
         name="profile"
         options={{
           headerShown: false,

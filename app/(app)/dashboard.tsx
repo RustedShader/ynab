@@ -247,7 +247,7 @@ const Dashboard = () => {
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Balance Trend</Text>
                         <Pressable
-                            onPress={() => router.push({ pathname: "/graphs", params: { username: username } })}
+                            onPress={() => router.navigate({ pathname: "/graphs", params: { username: username } })}
                             style={styles.seeAllButton}
                         >
                             <Text style={styles.seeAllText}>View Details</Text>
@@ -271,7 +271,17 @@ const Dashboard = () => {
                 <View style={styles.transactionsContainer}>
                     <Text style={styles.sectionTitle}>Analyzed Data</Text>
                     <Pressable
-                        onPress={() => router.push({ pathname: "/analysis", params: { username: username } })}
+                        onPress={() => router.navigate({ pathname: "/analysis", params: { username: username } })}
+                        style={styles.seeAllButton}
+                    >
+                        <Text style={styles.seeAllText}>See All</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                    </Pressable>
+                </View>
+                <View style={styles.transactionsContainer}>
+                    <Text style={styles.sectionTitle}>Chatbot</Text>
+                    <Pressable
+                        onPress={() => router.navigate({ pathname: "/chatbot", params: { username: username } })}
                         style={styles.seeAllButton}
                     >
                         <Text style={styles.seeAllText}>See All</Text>
@@ -284,7 +294,7 @@ const Dashboard = () => {
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Transactions</Text>
                         <Pressable
-                            onPress={() => router.push({ pathname: "/transactions", params: { username: username } })}
+                            onPress={() => router.navigate({ pathname: "/transactions", params: { username: username } })}
                             style={styles.seeAllButton}
                         >
                             <Text style={styles.seeAllText}>See All</Text>
@@ -687,90 +697,5 @@ const styles = StyleSheet.create({
     },
 });
 
-// Add these helper components at the end of the file
-// const QuickActionButton = ({ icon, title, onPress, gradient }) => (
-//     <Pressable 
-//         style={[styles.quickActionButton, styles.cardShadow]}
-//         onPress={onPress}
-//     >
-//         <LinearGradient
-//             colors={gradient}
-//             style={styles.quickActionGradient}
-//         />
-//         <View style={styles.quickActionContent}>
-//             <View style={styles.quickActionIcon}>
-//                 <Ionicons name={icon} size={24} color="#8257e5" />
-//             </View>
-//             <Text style={styles.quickActionTitle}>{title}</Text>
-//         </View>
-//     </Pressable>
-// );
-
-// Add these functions for enhanced functionality
-const getTransactionIcon = (amount: number, type: string) => {
-    if (amount > 0) {
-        return type === 'transfer' ? 'swap-horizontal' : 'arrow-down';
-    }
-    return type === 'transfer' ? 'swap-horizontal' : 'arrow-up';
-};
-
-const getTransactionColor = (amount: number) => {
-    return amount > 0 ? '#4CAF50' : '#FF5252';
-};
-
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(Math.abs(amount));
-};
-
-// Add these custom hooks for animations if needed
-const useSlideIn = (delay = 0) => {
-    const [slideAnim] = useState(new Animated.Value(50));
-    const [opacityAnim] = useState(new Animated.Value(0));
-
-    useEffect(() => {
-        Animated.parallel([
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 500,
-                delay,
-                useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-                toValue: 1,
-                duration: 500,
-                delay,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    }, []);
-
-    return {
-        transform: [{ translateY: slideAnim }],
-        opacity: opacityAnim,
-    };
-};
-
-// Add these utility functions
-const formatDate = (date: string) => {
-    const options = {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-    return new Date(date).toLocaleString('en-US');
-};
-
-const abbreviateNumber = (num: number) => {
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-    return num.toString();
-};
 
 export default Dashboard;
