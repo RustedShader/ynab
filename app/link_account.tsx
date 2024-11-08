@@ -34,6 +34,38 @@ if (api_key && username){
 } 
 }
 
+
+const loadTransactionSorter = async () => {
+  setLoading(true);
+  try {
+    const response = await fetch("https://api.ynab.in/create_user_data", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Username: username,
+        "X-API-Key": api_key
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData: accountLinkedApiResponse = await response.json();
+      if (responseData.message === "added_initial_transacrtions") {
+              await linkBankAccount();
+              }
+              else{
+                Alert.alert("Authentication Failed", "Please check your credentials and try again."); 
+              }
+  } catch (error) {
+    console.error("Error fetching account data:", error);
+    Alert.alert("Authentication Failed", "Please check your credentials and try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const linkBankAccount = async () => {
     setLoading(true);
     try {
@@ -170,7 +202,7 @@ if (api_key && username){
 
             <TouchableOpacity
                 style={styles.loginButton}
-                onPress={linkBankAccount}
+                onPress={loadTransactionSorter}
                 activeOpacity={0.8}
               >
                 <LinearGradient

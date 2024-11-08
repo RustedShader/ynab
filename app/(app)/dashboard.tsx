@@ -302,9 +302,9 @@ const Dashboard = () => {
                         >
                             <View style={styles.transactionIcon}>
                                 <Ionicons 
-                                    name={Number(txn._amount) > 0 ? "arrow-down" : "arrow-up"} 
+                                    name={txn._type == "CREDIT" ? "arrow-down" : "arrow-up"} 
                                     size={20} 
-                                    color={Number(txn._amount) > 0 ? "#4CAF50" : "#FF5252"}
+                                    color={txn._type == "CREDIT" ? "#4CAF50" : "#FF5252"}
                                 />
                             </View>
                             <View style={styles.transactionDetails}>
@@ -316,11 +316,12 @@ const Dashboard = () => {
                                 </Text>
                             </View>
                             <Text style={[
-                                styles.transactionAmount,
-                                Number(txn._amount) > 0 ? styles.positiveAmount : styles.negativeAmount
-                            ]}>
-                                {Number(txn._amount) > 0 ? '+' : ''}{formatAmount(txn._amount)}
-                            </Text>
+                                        styles.amountText,
+                                        txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
+                                    ]}>
+                                        {txn._type === "DEBIT" ? "-" : "+"}
+                                        {formatAmount(Number(txn._amount))}
+                                    </Text>
                         </Pressable>
                     ))}
                 </View>
@@ -372,6 +373,32 @@ const styles = StyleSheet.create({
         right: 0,
         top: 0,
         bottom: 0,
+    },
+    outflowText: {
+        color: '#EF4444',
+    },
+    inflowText: {
+        color: '#10B981',
+    },
+    amountText: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    transactionBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    outflowBadge: {
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    },
+    inflowBadge: {
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
     scrollView: {
         flex: 1,
