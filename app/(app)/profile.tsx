@@ -28,7 +28,7 @@ const ProfilePage = () => {
   const logoutUser = async () => {
     await AsyncStorage.removeItem("api_key");
     await AsyncStorage.removeItem("username");
-    router.replace({ pathname: "/login" });
+    router.push({ pathname: "/login" });
   };
 
   return (

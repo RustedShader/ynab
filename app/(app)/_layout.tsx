@@ -27,6 +27,14 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="milestone"
+        options={{
+          headerShown: false,
+          headerBackTitle: "Dashboard",
+          title: "Milestone",
+        }}
+      />
+      <Stack.Screen
         name="chatbot"
         options={{
           headerShown: false,

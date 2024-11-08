@@ -13,7 +13,7 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import { Ionicons } from '@expo/vector-icons';
 import { finvu, TransactionEntity } from "@/interfaces/ynab_api";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -63,7 +63,7 @@ const Graphs = () => {
     const fetchUserData = async () => {
         try {
             const response = await fetch("https://api.ynab.in/get_user_data", {
-                method: "POST", // Changed to GET as per previous fix
+                method: "POST", 
                 headers: {
                     "Content-Type": "application/json",
                     "Username": username,
@@ -104,7 +104,6 @@ const Graphs = () => {
       }, [username,api_key]);
 
 
-    // ... (keeping fetchUserData and useEffect the same)
 
     if (loading) {
         return (

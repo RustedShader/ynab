@@ -288,6 +288,16 @@ const Dashboard = () => {
                         <Ionicons name="chevron-forward" size={16} color="#8257e5" />
                     </Pressable>
                 </View>
+                <View style={styles.transactionsContainer}>
+                    <Text style={styles.sectionTitle}>Milestone and Goals</Text>
+                    <Pressable
+                        onPress={() => router.navigate({ pathname: "/milestone", params: { username: username } })}
+                        style={styles.seeAllButton}
+                    >
+                        <Text style={styles.seeAllText}>See All</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                    </Pressable>
+                </View>
 
                 {/* Enhanced Transactions Section */}
                 <View style={styles.transactionsContainer}>
