@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -21,9 +21,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
-
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export interface LoginResponseInterface {
   message: string;
@@ -41,11 +39,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
 
-  // Animation values
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
-  const shakingAnimation = new Animated.Value(0);
-  
+  // Use useRef for animation values to prevent recreating them on each render
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const shakingAnimation = useRef(new Animated.Value(0)).current;
+
+  // Handle initial animations
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -59,22 +58,69 @@ const Login = () => {
         useNativeDriver: true,
       }),
     ]).start();
+  }, []);
 
-    const keyboardWillShow = Keyboard.addListener(
+  // Handle keyboard visibility
+  useEffect(() => {
+    const handleKeyboardShow = () => {
+      setKeyboardVisible(true);
+      // Adjust opacity based on platform
+      if (Platform.OS === 'web') {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        Animated.timing(fadeAnim, {
+          toValue: 0.8,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    };
+
+    const handleKeyboardHide = () => {
+      setKeyboardVisible(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const keyboardShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true)
+      handleKeyboardShow
     );
-    const keyboardWillHide = Keyboard.addListener(
+    const keyboardHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false)
+      handleKeyboardHide
     );
+
+    // Add web-specific focus handlers
+    if (Platform.OS === 'web') {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        input.addEventListener('focus', handleKeyboardShow);
+        input.addEventListener('blur', handleKeyboardHide);
+      });
+
+      return () => {
+        inputs.forEach(input => {
+          input.removeEventListener('focus', handleKeyboardShow);
+          input.removeEventListener('blur', handleKeyboardHide);
+        });
+      };
+    }
 
     return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
     };
   }, []);
 
+  // Handle navigation based on verification
   useEffect(() => {
     if (isUserVerified) {
       if (isBankAccountLinked) {
@@ -140,18 +186,10 @@ const Login = () => {
 
       const responseData: LoginResponseInterface = await response.json();
       if (responseData.message === "user_verified") {
-        if (responseData.user_account_linked){
-          AsyncStorage.setItem('api_key',responseData.api_key)
-          AsyncStorage.setItem('username',username)
-          setBankAccountLinked(true);
-          setUserVerified(true)
-        }
-        else{
-          AsyncStorage.setItem('api_key',responseData.api_key)
-          AsyncStorage.setItem('username',username)
-          setBankAccountLinked(false);
-          setUserVerified(true);
-        }
+        await AsyncStorage.setItem('api_key', responseData.api_key);
+        await AsyncStorage.setItem('username', username);
+        setBankAccountLinked(responseData.user_account_linked);
+        setUserVerified(true);
       }
     } catch (error) {
       console.error("Error fetching account data:", error);
@@ -310,6 +348,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+    minHeight: height,
     padding: 20,
   },
   scrollContainerKeyboard: {

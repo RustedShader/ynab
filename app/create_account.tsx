@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   KeyboardTypeOptions,
+  Keyboard,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,6 +36,8 @@ interface InputFieldProps {
   showPassword?: boolean;
   onTogglePassword?: () => void;
   maxLength?: number;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 const InputField: React.FC<InputFieldProps> = ({ 
@@ -47,7 +50,9 @@ const InputField: React.FC<InputFieldProps> = ({
   showPasswordToggle = false,
   showPassword = false,
   onTogglePassword,
-  maxLength
+  maxLength,
+  onFocus,
+  onBlur
 }) => (
   <View style={styles.inputWrapper}>
     <Ionicons name={icon} size={20} color="#8E8E93" style={styles.inputIcon} />
@@ -61,6 +66,8 @@ const InputField: React.FC<InputFieldProps> = ({
       keyboardType={keyboardType}
       autoCapitalize="none"
       maxLength={maxLength}
+      onFocus={onFocus}
+      onBlur={onBlur}
     />
     {showPasswordToggle && (
       <TouchableOpacity onPress={onTogglePassword} style={styles.passwordToggle}>
@@ -77,6 +84,7 @@ const InputField: React.FC<InputFieldProps> = ({
 const CreateAccount: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -87,9 +95,11 @@ const CreateAccount: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
 
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
+  // Use useRef for animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
 
+  // Handle initial animations
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -103,6 +113,66 @@ const CreateAccount: React.FC = () => {
         useNativeDriver: true,
       }),
     ]).start();
+  }, []);
+
+  // Handle keyboard visibility and animations
+  useEffect(() => {
+    const handleKeyboardShow = () => {
+      setKeyboardVisible(true);
+      // Platform-specific opacity handling
+      if (Platform.OS === 'web') {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        Animated.timing(fadeAnim, {
+          toValue: 0.8,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    };
+
+    const handleKeyboardHide = () => {
+      setKeyboardVisible(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      handleKeyboardShow
+    );
+    const keyboardHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      handleKeyboardHide
+    );
+
+    // Web-specific focus handlers
+    if (Platform.OS === 'web') {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        input.addEventListener('focus', handleKeyboardShow);
+        input.addEventListener('blur', handleKeyboardHide);
+      });
+
+      return () => {
+        inputs.forEach(input => {
+          input.removeEventListener('focus', handleKeyboardShow);
+          input.removeEventListener('blur', handleKeyboardHide);
+        });
+      };
+    }
+
+    return () => {
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
+    };
   }, []);
 
   const handleInputChange = (field: keyof typeof formData) => (value: string) => {
@@ -204,7 +274,10 @@ const CreateAccount: React.FC = () => {
         style={styles.keyboardAvoidingView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={[
+            styles.scrollContainer,
+            isKeyboardVisible && styles.scrollContainerKeyboard
+          ]}
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View
@@ -316,6 +389,10 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
+  },
+  scrollContainerKeyboard: {
+    justifyContent: 'flex-start',
+    paddingTop: 60,
   },
   logoContainer: {
     alignItems: 'center',
