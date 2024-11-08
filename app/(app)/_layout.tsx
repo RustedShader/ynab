@@ -27,6 +27,14 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="profile"
+        options={{
+          headerShown: false,
+          headerBackTitle: "Dashboard",
+          title: "Profile",
+        }}
+      />
+      <Stack.Screen
         name="transactions"
         options={{
           headerShown: false,

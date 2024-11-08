@@ -1,17 +1,35 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 export default function Welcome() {
   const titleAnim = new Animated.Value(0);
   const buttonsAnim = new Animated.Value(0);
+  
+
+  const checkIfUserLogged = async () => {
+    const api_key = await AsyncStorage.getItem('api_key')
+    const username = await AsyncStorage.getItem('username')
+
+    if (api_key && username){
+      router.push({pathname: '/dashboard'})
+    }
+    
+    
+  }
 
   useEffect(() => {
+    const checkData = async () => {
+      await checkIfUserLogged();
+    }
+
+    checkData();
     Animated.sequence([
       Animated.timing(titleAnim, {
         toValue: 1,

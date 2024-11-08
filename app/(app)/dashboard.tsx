@@ -25,7 +25,7 @@ const { width } = Dimensions.get("window");
 
 const Dashboard = () => {
     const router = useRouter();
-    const [username, setUsername]  = useState<string>('')
+    const [username, setUsername] = useState<string>('')
     const [api_key, setApiKey] = useState<string>('')
     const [accountData, setAccountData] = useState<finvu | null>(null);
     const [newsData, setNewsData] = useState<FinanceNewsAPI | null>(null);
@@ -33,46 +33,46 @@ const Dashboard = () => {
     const [showBalance, setShowBalance] = useState(false);
 
     const chartConfig = {
-            backgroundColor: 'transparent',
-            backgroundGradientFrom: '#1a1a1a',
-            backgroundGradientTo: '#1a1a1a',
-            backgroundGradientFromOpacity: 0,
-            backgroundGradientToOpacity: 0,
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(130, 87, 229, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            style: {
-                borderRadius: 16,
-            },
-            propsForLabels: {
-                fontSize: 10,
-            },
-            propsForDots: {
-                r: "4",
-                strokeWidth: "2",
-                stroke: "#8257e5"
-            }
+        backgroundColor: 'transparent',
+        backgroundGradientFrom: '#1a1a1a',
+        backgroundGradientTo: '#1a1a1a',
+        backgroundGradientFromOpacity: 0,
+        backgroundGradientToOpacity: 0,
+        decimalPlaces: 0,
+        color: (opacity = 1) => `rgba(130, 87, 229, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+        style: {
+            borderRadius: 16,
+        },
+        propsForLabels: {
+            fontSize: 10,
+        },
+        propsForDots: {
+            r: "4",
+            strokeWidth: "2",
+            stroke: "#8257e5"
+        }
     };
 
     useEffect(() => {
         const fetchData = async () => {
-          await getSecureUserData();
-          if (username && api_key) {
-            await fetchUserData();
-            await fetchLatestFinanceNews();
-          }
+            await getSecureUserData();
+            if (username && api_key) {
+                await fetchUserData();
+                await fetchLatestFinanceNews();
+            }
         };
         fetchData();
-      }, [username, api_key]);
+    }, [username, api_key]);
 
 
     const getSecureUserData = async () => {
         const api_key = await AsyncStorage.getItem('api_key')
         const username = await AsyncStorage.getItem('username')
-    if (api_key && username){
-        setUsername(username);
-        setApiKey(api_key);
-    } 
+        if (api_key && username) {
+            setUsername(username);
+            setApiKey(api_key);
+        }
 
     }
 
@@ -97,9 +97,9 @@ const Dashboard = () => {
             console.error("Error fetching account data:", error);
         }
         finally {
-            if (!newsData){
-            setLoading(true);
-            }else{
+            if (!newsData) {
+                setLoading(true);
+            } else {
                 setLoading(false)
             }
         }
@@ -129,8 +129,8 @@ const Dashboard = () => {
         }
     }
 
-    
- 
+
+
 
     if (loading) {
         return (
@@ -202,7 +202,7 @@ const Dashboard = () => {
                             <Text style={styles.welcomeText}>Welcome back,</Text>
                             <Text style={styles.headerTitle}>{username}</Text>
                         </View>
-                        <Pressable style={styles.profileButton}>
+                        <Pressable style={styles.profileButton} onPress={() => router.navigate({pathname: '/profile'})}>
                             <LinearGradient
                                 colors={['#8257e5', '#6833e4']}
                                 style={styles.profileGradient}
@@ -247,7 +247,7 @@ const Dashboard = () => {
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Balance Trend</Text>
                         <Pressable
-                            onPress={() => router.push({pathname: "/graphs" , params: {username: username}})}
+                            onPress={() => router.push({ pathname: "/graphs", params: { username: username } })}
                             style={styles.seeAllButton}
                         >
                             <Text style={styles.seeAllText}>View Details</Text>
@@ -269,14 +269,14 @@ const Dashboard = () => {
                     />
                 </View>
                 <View style={styles.transactionsContainer}>
-                <Text style={styles.sectionTitle}>Analyzed Data</Text>
-                        <Pressable
-                            onPress={() => router.push({pathname: "/analysis" , params: {username: username}})}
-                            style={styles.seeAllButton}
-                        >
-                            <Text style={styles.seeAllText}>See All</Text>
-                            <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                        </Pressable> 
+                    <Text style={styles.sectionTitle}>Analyzed Data</Text>
+                    <Pressable
+                        onPress={() => router.push({ pathname: "/analysis", params: { username: username } })}
+                        style={styles.seeAllButton}
+                    >
+                        <Text style={styles.seeAllText}>See All</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                    </Pressable>
                 </View>
 
                 {/* Enhanced Transactions Section */}
@@ -284,7 +284,7 @@ const Dashboard = () => {
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Transactions</Text>
                         <Pressable
-                            onPress={() => router.push({pathname: "/transactions" , params: {username: username}})}
+                            onPress={() => router.push({ pathname: "/transactions", params: { username: username } })}
                             style={styles.seeAllButton}
                         >
                             <Text style={styles.seeAllText}>See All</Text>
@@ -301,9 +301,9 @@ const Dashboard = () => {
                             ]}
                         >
                             <View style={styles.transactionIcon}>
-                                <Ionicons 
-                                    name={txn._type == "CREDIT" ? "arrow-down" : "arrow-up"} 
-                                    size={20} 
+                                <Ionicons
+                                    name={txn._type == "CREDIT" ? "arrow-down" : "arrow-up"}
+                                    size={20}
                                     color={txn._type == "CREDIT" ? "#4CAF50" : "#FF5252"}
                                 />
                             </View>
@@ -316,12 +316,12 @@ const Dashboard = () => {
                                 </Text>
                             </View>
                             <Text style={[
-                                        styles.amountText,
-                                        txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
-                                    ]}>
-                                        {txn._type === "DEBIT" ? "-" : "+"}
-                                        {formatAmount(Number(txn._amount))}
-                                    </Text>
+                                styles.amountText,
+                                txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
+                            ]}>
+                                {txn._type === "DEBIT" ? "-" : "+"}
+                                {formatAmount(Number(txn._amount))}
+                            </Text>
                         </Pressable>
                     ))}
                 </View>
@@ -449,6 +449,7 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: 'bold',
         color: '#ffffff',
+        textTransform: 'capitalize'
     },
     profileButton: {
         width: 40,
@@ -586,190 +587,190 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 24,
     },
-newsItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: 16,
+    newsItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 16,
+    },
+    newsPressed: {
+        opacity: 0.7,
+        backgroundColor: 'rgba(130, 87, 229, 0.1)',
+        borderRadius: 16,
+    },
+    newsBorder: {
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(142, 142, 147, 0.1)',
+    },
+    newsImage: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        marginRight: 12,
+    },
+    newsContent: {
+        flex: 1,
+        marginRight: 12,
+    },
+    newsTitle: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#ffffff',
+        marginBottom: 4,
+        lineHeight: 20,
+    },
+    newsUrl: {
+        fontSize: 13,
+        color: '#8E8E93',
+    },
+    // Quick Actions
+    quickActionsContainer: {
+        marginHorizontal: 16,
+        marginBottom: 24,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+    },
+    quickActionButton: {
+        width: '48%',
+        backgroundColor: 'rgba(26, 26, 26, 0.8)',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    quickActionGradient: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        borderRadius: 16,
+        opacity: 0.1,
+    },
+    quickActionContent: {
+        alignItems: 'center',
+    },
+    quickActionIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(130, 87, 229, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    quickActionTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#ffffff',
+        textAlign: 'center',
+    },
+    // Card Shadows
+    cardShadow: {
+        shadowColor: '#8257e5',
+        shadowOffset: {
+            width: 0,
+            height: 4,
         },
-        newsPressed: {
-            opacity: 0.7,
-            backgroundColor: 'rgba(130, 87, 229, 0.1)',
-            borderRadius: 16,
-        },
-        newsBorder: {
-            borderTopWidth: 1,
-            borderTopColor: 'rgba(142, 142, 147, 0.1)',
-        },
-        newsImage: {
-            width: 64,
-            height: 64,
-            borderRadius: 16,
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            marginRight: 12,
-        },
-        newsContent: {
-            flex: 1,
-            marginRight: 12,
-        },
-        newsTitle: {
-            fontSize: 15,
-            fontWeight: '500',
-            color: '#ffffff',
-            marginBottom: 4,
-            lineHeight: 20,
-        },
-        newsUrl: {
-            fontSize: 13,
-            color: '#8E8E93',
-        },
-        // Quick Actions
-        quickActionsContainer: {
-            marginHorizontal: 16,
-            marginBottom: 24,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-        },
-        quickActionButton: {
-            width: '48%',
-            backgroundColor: 'rgba(26, 26, 26, 0.8)',
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-        },
-        quickActionGradient: {
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            borderRadius: 16,
-            opacity: 0.1,
-        },
-        quickActionContent: {
-            alignItems: 'center',
-        },
-        quickActionIcon: {
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: 'rgba(130, 87, 229, 0.2)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: 12,
-        },
-        quickActionTitle: {
-            fontSize: 14,
-            fontWeight: '600',
-            color: '#ffffff',
-            textAlign: 'center',
-        },
-        // Card Shadows
-        cardShadow: {
-            shadowColor: '#8257e5',
-            shadowOffset: {
-                width: 0,
-                height: 4,
-            },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 5,
-        },
-        // Animations
-        fadeIn: {
-            opacity: 1,
-            transform: [{ translateY: 0 }],
-        },
-        fadeOut: {
-            opacity: 0,
-            transform: [{ translateY: 20 }],
-        },
-    });
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    // Animations
+    fadeIn: {
+        opacity: 1,
+        transform: [{ translateY: 0 }],
+    },
+    fadeOut: {
+        opacity: 0,
+        transform: [{ translateY: 20 }],
+    },
+});
 
-    // Add these helper components at the end of the file
-    // const QuickActionButton = ({ icon, title, onPress, gradient }) => (
-    //     <Pressable 
-    //         style={[styles.quickActionButton, styles.cardShadow]}
-    //         onPress={onPress}
-    //     >
-    //         <LinearGradient
-    //             colors={gradient}
-    //             style={styles.quickActionGradient}
-    //         />
-    //         <View style={styles.quickActionContent}>
-    //             <View style={styles.quickActionIcon}>
-    //                 <Ionicons name={icon} size={24} color="#8257e5" />
-    //             </View>
-    //             <Text style={styles.quickActionTitle}>{title}</Text>
-    //         </View>
-    //     </Pressable>
-    // );
+// Add these helper components at the end of the file
+// const QuickActionButton = ({ icon, title, onPress, gradient }) => (
+//     <Pressable 
+//         style={[styles.quickActionButton, styles.cardShadow]}
+//         onPress={onPress}
+//     >
+//         <LinearGradient
+//             colors={gradient}
+//             style={styles.quickActionGradient}
+//         />
+//         <View style={styles.quickActionContent}>
+//             <View style={styles.quickActionIcon}>
+//                 <Ionicons name={icon} size={24} color="#8257e5" />
+//             </View>
+//             <Text style={styles.quickActionTitle}>{title}</Text>
+//         </View>
+//     </Pressable>
+// );
 
-    // Add these functions for enhanced functionality
-    const getTransactionIcon = (amount: number, type: string) => {
-        if (amount > 0) {
-            return type === 'transfer' ? 'swap-horizontal' : 'arrow-down';
-        }
-        return type === 'transfer' ? 'swap-horizontal' : 'arrow-up';
+// Add these functions for enhanced functionality
+const getTransactionIcon = (amount: number, type: string) => {
+    if (amount > 0) {
+        return type === 'transfer' ? 'swap-horizontal' : 'arrow-down';
+    }
+    return type === 'transfer' ? 'swap-horizontal' : 'arrow-up';
+};
+
+const getTransactionColor = (amount: number) => {
+    return amount > 0 ? '#4CAF50' : '#FF5252';
+};
+
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(Math.abs(amount));
+};
+
+// Add these custom hooks for animations if needed
+const useSlideIn = (delay = 0) => {
+    const [slideAnim] = useState(new Animated.Value(50));
+    const [opacityAnim] = useState(new Animated.Value(0));
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 500,
+                delay,
+                useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+                toValue: 1,
+                duration: 500,
+                delay,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, []);
+
+    return {
+        transform: [{ translateY: slideAnim }],
+        opacity: opacityAnim,
     };
+};
 
-    const getTransactionColor = (amount: number) => {
-        return amount > 0 ? '#4CAF50' : '#FF5252';
+// Add these utility functions
+const formatDate = (date: string) => {
+    const options = {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
     };
+    return new Date(date).toLocaleString('en-US');
+};
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(Math.abs(amount));
-    };
-
-    // Add these custom hooks for animations if needed
-    const useSlideIn = (delay = 0) => {
-        const [slideAnim] = useState(new Animated.Value(50));
-        const [opacityAnim] = useState(new Animated.Value(0));
-
-        useEffect(() => {
-            Animated.parallel([
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 500,
-                    delay,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(opacityAnim, {
-                    toValue: 1,
-                    duration: 500,
-                    delay,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-        }, []);
-
-        return {
-            transform: [{ translateY: slideAnim }],
-            opacity: opacityAnim,
-        };
-    };
-
-    // Add these utility functions
-    const formatDate = (date: string) => {
-        const options = { 
-            weekday: 'short', 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        return new Date(date).toLocaleString('en-US');
-    };
-
-    const abbreviateNumber = (num: number) => {
-        if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-        return num.toString();
-    };
+const abbreviateNumber = (num: number) => {
+    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+    return num.toString();
+};
 
 export default Dashboard;

@@ -344,12 +344,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+    marginLeft: 10
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    minHeight: height,
-    padding: 20,
+    paddingVertical: 40,
   },
   scrollContainerKeyboard: {
     justifyContent: 'flex-start',
