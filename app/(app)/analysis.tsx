@@ -209,6 +209,27 @@ const AnalysisPage: React.FC = () => {
         }
     };
 
+
+    const calculateMonthlySavings = (data: TransactionResponse) => {
+        let total_money_inflow = 0;
+        let total_money_outflow = 0;
+
+        data.transactions?.forEach((txn: TransactionApiResponse) => {
+            if (txn._type === "DEBIT") {
+                total_money_outflow += Number(txn._amount);
+            } else if (txn._type === "CREDIT") {
+                total_money_inflow += Number(txn._amount);
+            }
+        });
+        let savings = total_money_inflow - total_money_outflow;
+
+        if (savings > 0) {
+            return savings;
+        }
+
+        return 0;
+    };
+
     useEffect(() => {
         const fetchData = async () => {
           await getSecureUserData();
@@ -249,6 +270,7 @@ const AnalysisPage: React.FC = () => {
 
     const spending = calculateSpending(accountTransactionData.transactions);
     const totalPotentialSavings = calculateTotalSavings(spending);
+    const monthlySavings = calculateMonthlySavings(accountTransactionData);
 
     const PeriodSelector = () => (
         <View style={styles.periodSelector}>
@@ -292,6 +314,30 @@ const AnalysisPage: React.FC = () => {
                         </View>
                         <PeriodSelector />
                     </View>
+
+
+                     
+                        <BlurView intensity={20} tint="dark" style={styles.savingsCard}>
+                            <LinearGradient
+                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                                style={styles.savingsGradient}
+                            >
+                                <View style={styles.savingsHeader}>
+                                    <View>
+                                        <Text style={styles.savingsTitle}>Your Savings</Text>
+                                        <Text style={styles.savingsAmount}>
+                                            ₹{monthlySavings.toLocaleString()}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.savingsIcon}>
+                                        <Ionicons name="wallet-outline" size={24} color="#8257e5" />
+                                    </View>
+                                </View>
+                                <Text style={styles.savingsDescription}>
+                                   You are saving this much monthly 
+                                </Text>
+                            </LinearGradient>
+                        </BlurView>
 
                     {totalPotentialSavings > 0 && (
                         <BlurView intensity={20} tint="dark" style={styles.savingsCard}>

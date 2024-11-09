@@ -160,7 +160,6 @@ const Dashboard = () => {
     }
 
     const { Profile, Summary, Transactions } = accountData.Account;
-    const { Holder } = Profile.Holders;
 
     const balance_data: { [id: string]: number } = {};
     Transactions.Transaction?.forEach((txn: TransactionEntity) => {
@@ -268,36 +267,124 @@ const Dashboard = () => {
                         segments={5}
                     />
                 </View>
-                <View style={styles.transactionsContainer}>
-                    <Text style={styles.sectionTitle}>Analyzed Data</Text>
-                    <Pressable
-                        onPress={() => router.navigate({ pathname: "/analysis", params: { username: username } })}
-                        style={styles.seeAllButton}
+                <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Analyzed Data</Text>
+                <Pressable
+                    onPress={() => router.navigate({ pathname: "/analysis", params: { username: username } })}
+                    style={styles.seeAllButton}
+                >
+                    <Text style={styles.seeAllText}>See All</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                </Pressable>
+            </View>
+            <View style={styles.metricsContainer}>
+                <Pressable style={styles.metricCard}>
+                    <LinearGradient
+                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                        style={styles.metricGradient}
                     >
-                        <Text style={styles.seeAllText}>See All</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                    </Pressable>
-                </View>
-                <View style={styles.transactionsContainer}>
-                    <Text style={styles.sectionTitle}>Chatbot</Text>
-                    <Pressable
-                        onPress={() => router.navigate({ pathname: "/chatbot", params: { username: username } })}
-                        style={styles.seeAllButton}
+                        <View style={styles.metricIcon}>
+                            <Ionicons name="trending-up" size={24} color="#8257e5" />
+                        </View>
+                        <Text style={styles.metricLabel}>Spending Trend</Text>
+                        <Text style={styles.metricValue}>+12.5%</Text>
+                    </LinearGradient>
+                </Pressable>
+                <Pressable style={styles.metricCard}>
+                    <LinearGradient
+                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                        style={styles.metricGradient}
                     >
-                        <Text style={styles.seeAllText}>See All</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                    </Pressable>
-                </View>
-                <View style={styles.transactionsContainer}>
-                    <Text style={styles.sectionTitle}>Milestone and Goals</Text>
-                    <Pressable
-                        onPress={() => router.navigate({ pathname: "/milestone", params: { username: username } })}
-                        style={styles.seeAllButton}
+                        <View style={styles.metricIcon}>
+                            <Ionicons name="pie-chart" size={24} color="#8257e5" />
+                        </View>
+                        <Text style={styles.metricLabel}>Categories</Text>
+                        <Text style={styles.metricValue}>10 Active</Text>
+                    </LinearGradient>
+                </Pressable>
+            </View>
+        </View>
+
+        {/* Chatbot Section */}
+        <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Chatbot Assistant</Text>
+                <Pressable
+                    onPress={() => router.navigate({ pathname: "/chatbot", params: { username: username } })}
+                    style={styles.seeAllButton}
+                >
+                    <Text style={styles.seeAllText}>Chat Now</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                </Pressable>
+            </View>
+            <Pressable style={styles.chatbotCard}>
+                <LinearGradient
+                    colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                    style={styles.chatbotGradient}
+                >
+                    <View style={styles.chatbotContent}>
+                        <View style={styles.chatbotIcon}>
+                            <Ionicons name="chatbubble-ellipses" size={32} color="#8257e5" />
+                        </View>
+                        <Text style={styles.chatbotTitle}>Ask me anything about your finances</Text>
+                        <Text style={styles.chatbotSubtitle}>Get instant insights and recommendations</Text>
+                    </View>
+                </LinearGradient>
+            </Pressable>
+        </View>
+
+        {/* Milestones and Goals Section */}
+        <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Milestones & Goals</Text>
+                <Pressable
+                    onPress={() => router.navigate({ pathname: "/milestone", params: { username: username } })}
+                    style={styles.seeAllButton}
+                >
+                    <Text style={styles.seeAllText}>View All</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                </Pressable>
+            </View>
+            <View style={styles.goalsContainer}>
+                <Pressable style={styles.goalCard}>
+                    <LinearGradient
+                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                        style={styles.goalGradient}
                     >
-                        <Text style={styles.seeAllText}>See All</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                    </Pressable>
-                </View>
+                        <View style={styles.goalHeader}>
+                            <View style={styles.goalIcon}>
+                                <Ionicons name="car" size={24} color="#8257e5" />
+                            </View>
+                            <Text style={styles.goalProgress}>75%</Text>
+                        </View>
+                        <Text style={styles.goalTitle}>New Car</Text>
+                        <View style={styles.progressBar}>
+                            <View style={[styles.progressFill, { width: '75%' }]} />
+                        </View>
+                        <Text style={styles.goalAmount}>$15,000 / $20,000</Text>
+                    </LinearGradient>
+                </Pressable>
+                <Pressable style={styles.goalCard}>
+                    <LinearGradient
+                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                        style={styles.goalGradient}
+                    >
+                        <View style={styles.goalHeader}>
+                            <View style={styles.goalIcon}>
+                                <Ionicons name="home" size={24} color="#8257e5" />
+                            </View>
+                            <Text style={styles.goalProgress}>40%</Text>
+                        </View>
+                        <Text style={styles.goalTitle}>House Down Payment</Text>
+                        <View style={styles.progressBar}>
+                            <View style={[styles.progressFill, { width: '40%' }]} />
+                        </View>
+                        <Text style={styles.goalAmount}>$20,000 / $50,000</Text>
+                    </LinearGradient>
+                </Pressable>
+            </View>
+        </View>
 
                 {/* Enhanced Transactions Section */}
                 <View style={styles.transactionsContainer}>
@@ -396,6 +483,150 @@ const styles = StyleSheet.create({
     },
     outflowText: {
         color: '#EF4444',
+    },
+    sectionContainer: {
+        marginTop: 24,
+        marginHorizontal: 16,
+        backgroundColor: 'rgba(26, 26, 26, 0.8)',
+        padding: 16,
+        borderRadius: 24,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+    seeAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    seeAllText: {
+        fontSize: 14,
+        color: '#8257e5',
+        marginRight: 4,
+    },
+    // Metrics styles
+    metricsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    metricCard: {
+        flex: 1,
+        marginHorizontal: 4,
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    metricGradient: {
+        padding: 16,
+        alignItems: 'center',
+    },
+    metricIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(130, 87, 229, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    metricLabel: {
+        fontSize: 14,
+        color: '#8E8E93',
+        marginBottom: 4,
+    },
+    metricValue: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+    // Chatbot styles
+    chatbotCard: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    chatbotGradient: {
+        padding: 20,
+    },
+    chatbotContent: {
+        alignItems: 'center',
+    },
+    chatbotIcon: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: 'rgba(130, 87, 229, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    chatbotTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#ffffff',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    chatbotSubtitle: {
+        fontSize: 14,
+        color: '#8E8E93',
+        textAlign: 'center',
+    },
+    // Goals styles
+    goalsContainer: {
+        gap: 12,
+    },
+    goalCard: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    goalGradient: {
+        padding: 16,
+    },
+    goalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    goalIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(130, 87, 229, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    goalProgress: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#8257e5',
+    },
+    goalTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ffffff',
+        marginBottom: 12,
+    },
+    progressBar: {
+        height: 4,
+        backgroundColor: 'rgba(142, 142, 147, 0.2)',
+        borderRadius: 2,
+        marginBottom: 8,
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#8257e5',
+        borderRadius: 2,
+    },
+    goalAmount: {
+        fontSize: 14,
+        color: '#8E8E93',
     },
     inflowText: {
         color: '#10B981',
@@ -528,26 +759,6 @@ const styles = StyleSheet.create({
     chart: {
         borderRadius: 16,
         marginVertical: 8,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#ffffff',
-    },
-    seeAllButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    seeAllText: {
-        fontSize: 14,
-        color: '#8257e5',
-        marginRight: 4,
     },
     transactionsContainer: {
         marginTop: 24,
