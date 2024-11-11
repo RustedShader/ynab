@@ -3,169 +3,91 @@ import {
     View,
     ScrollView,
     Text,
-    ActivityIndicator,
     StyleSheet,
     SafeAreaView,
     Pressable,
     Animated
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transaction_api";
+import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-// Keep interfaces the same
-interface CategoryCardProps {
-    category: string;
-    amount: number;
+const api_url = process.env.EXPO_PUBLIC_API_URL;
+
+interface CategoryAnalysis {
+    total: number;
     average: number;
+    volatility: number;
+    frequency: number;
 }
 
-interface SpendingData {
-    [key: string]: number;
-}
-
-const INDIAN_AVERAGES: SpendingData = {
-    'ENTERTAINMENT': 1500,
-    'FOOD': 8000,
-    'LIFESTYLE': 3000,
-    'EDUCATION': 5000,
-    'SHOPPING': 3500,
-    'ECOMMERCE': 2500,
-    'TRAVEL': 2000,
-    'UTILITIES': 4000,
-    'SERVICES': 2000,
-    'GENERAL': 3000,
-    'UNCATEGORIZED': 1000
-};
-
-// Keep INDIAN_AVERAGES constant the same
-
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, amount, average }) => {
-    const difference = amount - average;
-    const percentageOver = ((difference / average) * 100).toFixed(1);
-    const isOverspending = difference > 0;
-    const fadeAnim = useState(new Animated.Value(0))[0];
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-        }).start();
-    }, []);
-
-    return (
-        <Animated.View style={{ opacity: fadeAnim }}>
-            <BlurView intensity={20} tint="dark" style={styles.categoryCard}>
-                <LinearGradient
-                    colors={isOverspending 
-                        ? ['rgba(239, 68, 68, 0.1)', 'rgba(185, 28, 28, 0.1)']
-                        : ['rgba(16, 185, 129, 0.1)', 'rgba(6, 95, 70, 0.1)']}
-                    style={styles.cardGradient}
-                >
-                    <View style={styles.categoryHeader}>
-                        <View style={styles.categoryTitleContainer}>
-                            <Text style={styles.categoryName}>{category}</Text>
-                            <View style={[
-                                styles.percentageBadge,
-                                isOverspending ? styles.overspendingBadge : styles.savingBadge
-                            ]}>
-                                <Ionicons 
-                                    name={isOverspending ? "trending-up" : "trending-down"} 
-                                    size={16} 
-                                    color={isOverspending ? "#ef4444" : "#10b981"}
-                                />
-                                <Text style={[
-                                    styles.percentageText,
-                                    isOverspending ? styles.overspendingText : styles.savingText
-                                ]}>
-                                    {Math.abs(Number(percentageOver))}%
-                                </Text>
-                            </View>
-                        </View>
-                        <View style={styles.divider} />
-                        
-                        <View style={styles.amountsContainer}>
-                            <View style={styles.amountColumn}>
-                                <Text style={styles.amountLabel}>Your Spending</Text>
-                                <Text style={[
-                                    styles.amount,
-                                    isOverspending ? styles.overspendingAmount : styles.savingAmount
-                                ]}>
-                                    ₹{amount.toLocaleString()}
-                                </Text>
-                            </View>
-                            <View style={styles.amountColumn}>
-                                <Text style={styles.amountLabel}>Average</Text>
-                                <Text style={styles.averageAmount}>
-                                    ₹{average.toLocaleString()}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={[
-                            styles.insightBox,
-                            isOverspending ? styles.overspendingInsight : styles.savingInsight
-                        ]}>
-                            <Text style={styles.insightText}>
-                                {isOverspending 
-                                    ? `You're spending ₹${difference.toLocaleString()} more than average on ${category.toLowerCase()}. Consider reducing these expenses.`
-                                    : `Great job! You're spending ₹${Math.abs(difference).toLocaleString()} less than average on ${category.toLowerCase()}.`
-                                }
-                            </Text>
-                        </View>
-                    </View>
-                </LinearGradient>
-            </BlurView>
-        </Animated.View>
-    );
-};
-
-const AnalysisPage: React.FC = () => {
-    const router = useRouter();
-    const [accountTransactionData, setAccountTransactionData] = useState<TransactionResponse | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [selectedPeriod, setSelectedPeriod] = useState('month');
-    const fadeAnim = useState(new Animated.Value(0))[0];
-    const [username, setUsername]  = useState<string>('')
-    const [api_key, setApiKey] = useState<string>('')
-
-    // Keep calculation functions the same
-    const calculateSpending = (transactions: any[]): SpendingData => {
-        const spending: SpendingData = {
-            'ENTERTAINMENT': 0,
-            'FOOD': 0,
-            'LIFESTYLE': 0,
-            'EDUCATION': 0,
-            'SHOPPING': 0,
-            'ECOMMERCE': 0,
-            'TRAVEL': 0,
-            'UTILITIES': 0,
-            'SERVICES': 0,
-            'GENERAL': 0,
-            'UNCATEGORIZED': 0
+interface ApiResponse {
+    basic_metrics: {
+        cash_inflow: number;
+        cash_outflow: number;
+        savings: number;
+        savings_ratio: number;
+    };
+    transaction_extremes: {
+        highest_expense: {
+            amount: number;
+            description: string;
+            date: string;
+            category: string;
         };
-
-        transactions?.forEach(t => {
-            if (t._type === "DEBIT") {
-                spending[t._transactionCategory] += Number(t._amount);
-            }
-        });
-
-        return spending;
+        lowest_transaction: {
+            amount: number;
+            description: string;
+            date: string;
+            category: string;
+        };
+    };
+    advanced_metrics: {
+        average_transaction_size: number;
+        spending_velocity: number;
+        category_spending: {
+            [key: string]: number;
+        };
+        recurring_transactions: {
+            [key: string]: number;
+        };
+    };
+    predictive_analytics: {
+        spending_trend: {
+            direction: string,
+            strength: number,
+        }
     };
 
-    // Calculate total potential savings
-    const calculateTotalSavings = (spending: SpendingData): number => {
-        return Object.entries(spending).reduce((total, [category, amount]) => {
-            const difference = amount - INDIAN_AVERAGES[category];
-            return total + (difference > 0 ? difference : 0);
-        }, 0);
+    seasonality: {
+        daily_pattern: {
+            Sunday: number,
+            Wednesday: number,
+            Monday: number,
+            Saturday: number,
+            Thursday: number,
+            Friday: number,
+            Tuesday: number
+        }
+    }
+    financial_health: {
+        overall_score: number;
+        category_analysis: {
+            [key: string]: CategoryAnalysis;
+        };
     };
+}
 
+const FinancialAnalysisPage: React.FC = () => {
+    const router = useRouter();
+    const [analysisData, setAnalysisData] = useState<ApiResponse | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [username, setUsername] = useState<string>('');
+    const [api_key, setApiKey] = useState<string>('');
+    const fadeAnim = useState(new Animated.Value(0))[0];
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -176,23 +98,21 @@ const AnalysisPage: React.FC = () => {
     }, []);
 
     const getSecureUserData = async () => {
-        const api_key = await AsyncStorage.getItem('api_key')
-        const username = await AsyncStorage.getItem('username')
-    if (api_key && username){
-        setUsername(username);
-        setApiKey(api_key);
-    } 
-    }
+        const api_key = await AsyncStorage.getItem('api_key');
+        const username = await AsyncStorage.getItem('username');
+        if (api_key && username) {
+            setUsername(username);
+            setApiKey(api_key);
+        }
+    };
 
-    const fetchUserTransactionData = async (): Promise<void> => {
+    const fetchAnalysisData = async (): Promise<void> => {
         try {
-            const response = await fetch("https://api.ynab.in/fetch_transactions", {
+            const response = await fetch(`${api_url}/user_financial_data`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Username": username,
                     "X-API-Key": api_key
-
                 },
             });
 
@@ -200,46 +120,24 @@ const AnalysisPage: React.FC = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const responseData: TransactionResponse = await response.json();
-            setAccountTransactionData(responseData);
+            const responseData: ApiResponse = await response.json();
+            setAnalysisData(responseData);
         } catch (error) {
-            console.error("Error fetching account data:", error);
+            console.error("Error fetching analysis data:", error);
         } finally {
             setLoading(false);
         }
     };
 
-
-    const calculateMonthlySavings = (data: TransactionResponse) => {
-        let total_money_inflow = 0;
-        let total_money_outflow = 0;
-
-        data.transactions?.forEach((txn: TransactionApiResponse) => {
-            if (txn._type === "DEBIT") {
-                total_money_outflow += Number(txn._amount);
-            } else if (txn._type === "CREDIT") {
-                total_money_inflow += Number(txn._amount);
-            }
-        });
-        let savings = total_money_inflow - total_money_outflow;
-
-        if (savings > 0) {
-            return savings;
-        }
-
-        return 0;
-    };
-
     useEffect(() => {
         const fetchData = async () => {
-          await getSecureUserData();
-          if (username && api_key) {
-            await fetchUserTransactionData();
-          }
+            await getSecureUserData();
+            if (username && api_key) {
+                await fetchAnalysisData();
+            }
         };
         fetchData();
-      }, [username,api_key]);
-
+    }, [username, api_key]);
 
     if (loading) {
         return (
@@ -248,13 +146,13 @@ const AnalysisPage: React.FC = () => {
                     colors={['#1a1a1a', '#000000']}
                     style={styles.gradientBackground}
                 />
-                <ActivityIndicator size="large" color="#8257e5" />
-                <Text style={styles.loadingText}>Analyzing your spending patterns...</Text>
+                <MaterialCommunityIcons name="loading" size={48} color="#8257e5" />
+                <Text style={styles.loadingText}>Analyzing your financial data...</Text>
             </View>
         );
     }
 
-    if (!accountTransactionData) {
+    if (!analysisData) {
         return (
             <View style={styles.errorContainer}>
                 <LinearGradient
@@ -263,36 +161,17 @@ const AnalysisPage: React.FC = () => {
                 />
                 <Ionicons name="alert-circle" size={48} color="#8257e5" />
                 <Text style={styles.errorTitle}>Analysis Unavailable</Text>
-                <Text style={styles.errorMessage}>Unable to analyze your spending patterns</Text>
+                <Text style={styles.errorMessage}>Unable to analyze your financial data</Text>
             </View>
         );
     }
 
-    const spending = calculateSpending(accountTransactionData.transactions);
-    const totalPotentialSavings = calculateTotalSavings(spending);
-    const monthlySavings = calculateMonthlySavings(accountTransactionData);
-
-    const PeriodSelector = () => (
-        <View style={styles.periodSelector}>
-            {['week', 'month', 'year'].map((period) => (
-                <Pressable
-                    key={period}
-                    style={[
-                        styles.periodButton,
-                        selectedPeriod === period && styles.periodButtonActive
-                    ]}
-                    onPress={() => setSelectedPeriod(period)}
-                >
-                    <Text style={[
-                        styles.periodButtonText,
-                        selectedPeriod === period && styles.periodButtonTextActive
-                    ]}>
-                        {period.charAt(0).toUpperCase() + period.slice(1)}
-                    </Text>
-                </Pressable>
-            ))}
-        </View>
-    );
+    const {
+        basic_metrics,
+        transaction_extremes,
+        advanced_metrics,
+        financial_health
+    } = analysisData;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -310,79 +189,470 @@ const AnalysisPage: React.FC = () => {
                             >
                                 <Ionicons name="arrow-back" size={24} color="#ffffff" />
                             </Pressable>
-                            <Text style={styles.headerTitle}>Spending Analysis</Text>
+                            <Text style={styles.headerTitle}>Financial Analysis</Text>
                         </View>
-                        <PeriodSelector />
                     </View>
 
+                    {/* Basic Metrics */}
+                    <MetricCard
+                        title="Cash Flow"
+                        value={`₹${basic_metrics.cash_inflow.toLocaleString()}`}
+                        subtitle={`Outflow: ₹${basic_metrics.cash_outflow.toLocaleString()}`}
+                        icon="cash-outline"
+                    />
 
-                     
-                        <BlurView intensity={20} tint="dark" style={styles.savingsCard}>
-                            <LinearGradient
-                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                                style={styles.savingsGradient}
-                            >
-                                <View style={styles.savingsHeader}>
-                                    <View>
-                                        <Text style={styles.savingsTitle}>Your Savings</Text>
-                                        <Text style={styles.savingsAmount}>
-                                            ₹{monthlySavings.toLocaleString()}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.savingsIcon}>
-                                        <Ionicons name="wallet-outline" size={24} color="#8257e5" />
-                                    </View>
-                                </View>
-                                <Text style={styles.savingsDescription}>
-                                   You are saving this much monthly 
-                                </Text>
-                            </LinearGradient>
-                        </BlurView>
+                    <MetricCard
+                        title="Savings"
+                        value={`₹${basic_metrics.savings.toLocaleString()}`}
+                        subtitle={`Savings ratio: ${basic_metrics.savings_ratio.toFixed(1)} % `}
+                        icon="wallet-outline"
+                    />
 
-                    {totalPotentialSavings > 0 && (
-                        <BlurView intensity={20} tint="dark" style={styles.savingsCard}>
-                            <LinearGradient
-                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                                style={styles.savingsGradient}
-                            >
-                                <View style={styles.savingsHeader}>
-                                    <View>
-                                        <Text style={styles.savingsTitle}>Potential Savings</Text>
-                                        <Text style={styles.savingsAmount}>
-                                            ₹{totalPotentialSavings.toLocaleString()}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.savingsIcon}>
-                                        <Ionicons name="rocket" size={24} color="#8257e5" />
-                                    </View>
-                                </View>
-                                <Text style={styles.savingsDescription}>
-                                    You could save this amount monthly by optimizing your spending
-                                </Text>
-                            </LinearGradient>
-                        </BlurView>
-                    )}
+                    <MetricCard
+                        title="Financial Health Score"
+                        value={financial_health.overall_score.toFixed(1)}
+                        subtitle={`Avg.transaction: ₹${advanced_metrics.average_transaction_size.toFixed(2)}`}
+                        icon="pulse"
+                    />
+                    <MetricCard
+                        title="Spending Velocity"
+                        value={advanced_metrics.spending_velocity.toFixed(1)}
+                        subtitle=''
+                        icon="analytics-outline"
+                    />
+                    <MetricCard
+                        title="Predictive Analytics"
+                        value={advanced_metrics.spending_velocity.toFixed(1)}
+                        subtitle={`Direction: ${analysisData.predictive_analytics.spending_trend.direction}`}
+                        icon={analysisData.predictive_analytics.spending_trend.direction === 'increasing' ? 'trending-up-outline' : 'trending-down-outline'} />
 
-                    <View style={styles.categoriesContainer}>
-                        {Object.entries(spending).map(([category, amount]) => (
-                            <CategoryCard
-                                key={category}
-                                category={category}
-                                amount={amount}
-                                average={INDIAN_AVERAGES[category]}
-                            />
-                        ))}
+                    {/* Transaction Extremes */}
+                    <MetricCard
+                        title="Highest Expense"
+                        value={`₹${transaction_extremes.highest_expense.amount.toLocaleString()}`}
+                        subtitle={transaction_extremes.highest_expense.description}
+                        icon="arrow-up-circle-outline"
+                    />
+
+                    <MetricCard
+                        title="Lowest Transaction"
+                        value={`₹${transaction_extremes.lowest_transaction.amount.toLocaleString()}`}
+                        subtitle={transaction_extremes.lowest_transaction.description}
+                        icon="arrow-down-circle-outline"
+                    />
+
+                    {/* Category Analysis */}
+                    <View style={styles.sectionTitle}>
+                        <Text style={styles.sectionTitleText}>Category Analysis</Text>
                     </View>
+
+                    {Object.entries(financial_health.category_analysis).map(([category, analysis]) => (
+                        <CategoryCard
+                            key={category}
+                            category={category}
+                            analysis={analysis}
+                        />
+                    ))}
+
+                    {/* Recurring Transactions */}
+                    <View style={styles.sectionTitle}>
+                        <Text style={styles.sectionTitleText}>Recurring Transactions</Text>
+                    </View>
+
+                    {Object.entries(advanced_metrics.recurring_transactions).map(([description, amount]) => (
+                        <RecurringTransactionCard
+                            key={description}
+                            description={description}
+                            amount={amount}
+                        />
+                    ))}
                 </Animated.View>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
+const MetricCard: React.FC<{
+    title: string;
+    value: string | number;
+    subtitle: string;
+    icon: keyof typeof Ionicons.glyphMap;
+}> = ({ title, value, subtitle, icon }) => (
+    <BlurView intensity={20} tint="dark" style={styles.metricCard}>
+        <LinearGradient
+            colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+            style={styles.metricGradient}
+        >
+            <View style={styles.metricHeader}>
+                <View style={styles.metricInfo}>
+                    <Text style={styles.metricTitle}>{title}</Text>
+                    <Text style={styles.metricValue}>{value}</Text>
+                    <Text style={styles.metricSubtitle}>{subtitle}</Text>
+                </View>
+                <View style={styles.metricIcon}>
+                    <Ionicons name={icon} size={32} color="#8257e5" />
+                </View>
+            </View>
+        </LinearGradient>
+    </BlurView>
+);
+
+const CategoryCard: React.FC<{
+    category: string;
+    analysis: CategoryAnalysis;
+}> = ({ category, analysis }) => {
+    const { total, average, frequency, volatility } = analysis;
+    const difference = total - average;
+    const percentageOver = ((difference / average) * 100).toFixed(1);
+    const isOverspending = difference > 0;
+
+    return (
+        <BlurView intensity={20} tint="dark" style={styles.categoryCard}>
+            <LinearGradient
+                colors={
+                    isOverspending
+                        ? ['rgba(239, 68, 68, 0.1)', 'rgba(185, 28, 28, 0.1)']
+                        : ['rgba(16, 185, 129, 0.1)', 'rgba(6, 95, 70, 0.1)']
+                }
+                style={styles.categoryGradient}
+            >
+                <View style={styles.categoryHeader}>
+                    <View style={styles.categoryTitleContainer}>
+                        <Text style={styles.categoryName}>{category}</Text>
+                        <View
+                            style={[
+                                styles.percentageBadge,
+                                isOverspending ? styles.overspendingBadge : styles.savingBadge,
+                            ]}
+                        >
+                            <Ionicons
+                                name={isOverspending ? 'trending-up' : 'trending-down'}
+                                size={16}
+                                color={isOverspending ? '#ef4444' : '#10b981'}
+                            />
+                            <Text
+                                style={[
+                                    styles.percentageText,
+                                    isOverspending ? styles.overspendingText : styles.savingText,
+                                ]}
+                            >
+                                {Math.abs(Number(percentageOver))}%
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.divider} />
+
+                    <View style={styles.metricsContainer}>
+                        <View style={styles.metricColumn}>
+                            <Text style={styles.metricLabel}>Total Spending</Text>
+                            <Text
+                                style={[
+                                    styles.metricValue,
+                                    isOverspending ? styles.overspendingValue : styles.savingValue,
+                                ]}
+                            >
+                                ₹{total.toLocaleString()}
+                            </Text>
+                            <Text style={styles.textSm}>{frequency} transactions</Text>
+                        </View>
+                        <View style={styles.metricColumn}>
+                            <Text style={styles.metricLabel}>Average per Transaction</Text>
+                            <Text style={styles.metricValue}>₹{average.toLocaleString()}</Text>
+                            <Text style={styles.textSm}>
+                                Volatility: {volatility.toFixed(1)}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View
+                        style={[
+                            styles.insightBox,
+                            isOverspending ? styles.overspendingInsight : styles.savingInsight,
+                        ]}
+                    >
+                        <Text style={styles.insightText}>
+                            {isOverspending
+                                ? `Your spending is ₹${difference.toLocaleString()} above your average in ${category.toLowerCase()}.`
+                                : `Your spending is ₹${Math.abs(
+                                    difference
+                                ).toLocaleString()
+                                } below your average in ${category.toLowerCase()}.`}
+                        </Text>
+                    </View>
+                </View>
+            </LinearGradient>
+        </BlurView>
+    );
+};
+
+const RecurringTransactionCard: React.FC<{
+    description: string;
+    amount: number;
+}> = ({ description, amount }) => (
+    <BlurView intensity={20} tint="dark" style={styles.transactionCard}>
+        <LinearGradient
+            colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+            style={styles.transactionGradient}
+        >
+            <View style={styles.transactionHeader}>
+                <Text style={styles.transactionTitle}>{description}</Text>
+                <Pressable style={styles.filterIcon}>
+                    <Ionicons name="filter" size={20} color="#8257e5" />
+                </Pressable>
+            </View>
+
+            <Pressable
+                style={({ pressed }) => [
+                    styles.transactionItem,
+                    pressed && styles.transactionPressed,
+                ]}
+            >
+                <View style={[styles.transactionIcon, styles.outflowIcon]}>
+                    <Ionicons name="arrow-up" size={20} color="#EF4444" />
+                </View>
+
+                <View style={styles.transactionDetails}>
+                    <Text style={styles.transactionNarration} numberOfLines={1}>
+                        {description}
+                    </Text>
+                </View>
+
+                <View style={styles.transactionAmount}>
+                    <Text style={styles.amountText}>₹{amount.toLocaleString()}</Text>
+                    <View style={styles.transactionBadge}>
+                        <Text style={styles.badgeText}>Recurring</Text>
+                    </View>
+                </View>
+            </Pressable>
+        </LinearGradient>
+    </BlurView>
+
+);
+
 const styles = StyleSheet.create({
+    metricCard: {
+        marginBottom: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    metricGradient: {
+        padding: 16,
+    },
+    metricHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    metricInfo: {
+        flex: 1,
+    },
+    metricTitle: {
+        fontSize: 16,
+        color: '#e5e7eb',
+        marginBottom: 4,
+    },
+    metricValue: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    metricSubtitle: {
+        fontSize: 16,
+        color: '#9ca3af',
+        marginTop: 4,
+    },
+    metricIcon: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: 'rgba(130, 87, 229, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    transactionCard: {
+        marginBottom: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    transactionGradient: {
+        padding: 16,
+    },
+    transactionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    transactionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    filterIcon: {
+        padding: 8,
+    },
+    transactionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    transactionPressed: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    transactionIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    outflowIcon: {
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    },
+    transactionDetails: {
+        flex: 1,
+    },
+    transactionNarration: {
+        fontSize: 16,
+        color: '#ffffff',
+    },
+    transactionAmount: {
+        alignItems: 'flex-end',
+    },
+    amountText: {
+        fontSize: 16,
+        color: '#ffffff',
+        fontWeight: 'bold',
+    },
+    transactionBadge: {
+        marginTop: 4,
+        backgroundColor: 'rgba(130, 87, 229, 0.2)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    badgeText: {
+        fontSize: 12,
+        color: '#8257e5',
+    },
+    categoryCard: {
+        marginBottom: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    categoryGradient: {
+        padding: 16,
+    },
+    categoryHeader: {},
+    categoryTitleContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    categoryName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    percentageBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    overspendingBadge: {
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    },
+    savingBadge: {
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    percentageText: {
+        marginLeft: 4,
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    overspendingText: {
+        color: '#ef4444',
+    },
+    savingText: {
+        color: '#10b981',
+    },
+    divider: {
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.2)',
+        marginVertical: 12,
+    },
+    metricsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    metricColumn: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    metricLabel: {
+        fontSize: 14,
+        color: '#e5e7eb',
+        marginBottom: 4,
+    },
+    overspendingValue: {
+        color: '#ef4444',
+    },
+    savingValue: {
+        color: '#10b981',
+    },
+    textSm: {
+        fontSize: 12,
+        color: '#e5e7eb',
+    },
+    insightBox: {
+        marginTop: 16,
+        padding: 12,
+        borderRadius: 8,
+    },
+    overspendingInsight: {
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    },
+    savingInsight: {
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    insightText: {
+        fontSize: 14,
+        color: '#ffffff',
+    },
     container: {
         flex: 1,
         backgroundColor: '#000000',
+    },
+    metricColumnFlex: {
+        flex: 1,
+    },
+    transactionsContainer: {
+        margin: 16,
+        borderRadius: 24,
+        overflow: 'hidden',
+        marginBottom: 32,
+    },
+    transactionDate: {
+        fontSize: 13,
+        color: '#8E8E93',
+    },
+
+    outflowBadge: {
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        paddingBottom: 0,
+    },
+    recurringTransactionHeaderFlex: {
+        flexGrow: 1,
+        flexShrink: 1,
     },
     gradientBackground: {
         position: 'absolute',
@@ -447,293 +717,52 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#ffffff',
     },
-    periodSelector: {
-        flexDirection: 'row',
-        backgroundColor: 'rgba(130, 87, 229, 0.1)',
-        borderRadius: 12,
-        padding: 4,
+    sectionTitle: {
+        marginVertical: 24,
+        paddingHorizontal: 16,
     },
-    periodButton: {
-        flex: 1,
-        paddingVertical: 8,
-        alignItems: 'center',
-        borderRadius: 8,
-    },
-    periodButtonActive: {
-        backgroundColor: '#8257e5',
-    },
-    periodButtonText: {
-        color: '#8E8E93',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    periodButtonTextActive: {
+    sectionTitleText: {
+        fontSize: 20,
+        fontWeight: '600',
         color: '#ffffff',
     },
-    savingsCard: {
+
+
+    recurringTransactionCard: {
         margin: 16,
         borderRadius: 24,
         overflow: 'hidden',
     },
-    savingsGradient: {
+    recurringTransactionGradient: {
         padding: 20,
     },
-    savingsHeader: {
+    recurringTransactionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
     },
-    savingsTitle: {
+    recurringTransactionDescription: {
         fontSize: 16,
-        color: '#8E8E93',
-        marginBottom: 4,
-    },
-    savingsAmount: {
-        fontSize: 32,
-        fontWeight: 'bold',
+        fontWeight: '600',
         color: '#ffffff',
     },
-    savingsIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: 'rgba(130, 87, 229, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
+    recurringTransactionAmount: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#8257e5',
     },
-    savingsDescription: {
+
+    metricDescription: {
         fontSize: 14,
         color: '#8E8E93',
         marginTop: 8,
     },
-    categoriesContainer: {
-        padding: 16,
-    },
-    categoryCard: {
-        borderRadius: 24,
-        marginBottom: 16,
-        overflow: 'hidden',
-    },
-    cardGradient: {
-        padding: 20,
-    },
-    categoryHeader: {
-        flex: 1,
-    },
-    categoryTitleContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    categoryName: {
+
+    averageValue: {
         fontSize: 20,
         fontWeight: '600',
         color: '#ffffff',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        marginVertical: 16,
-    },
-    amountsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    amountColumn: {
-        flex: 1,
-    },
-    amountLabel: {
-        fontSize: 14,
-        color: '#8E8E93',
-        marginBottom: 4,
-    },
-    amount: {
-        fontSize: 20,
-        fontWeight: '600',
-    },
-    averageAmount: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#ffffff',
-    },
-    overspendingAmount: {
-        color: '#ef4444',
-    },
-    savingAmount: {
-        color: '#10b981',
-    },
-    percentageBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
-    },
-    overspendingBadge: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    },
-    savingBadge: {
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    },
-    percentageText: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginLeft: 4,
-    },
-    overspendingText: {
-        color: '#ef4444',
-    },
-    savingText: {
-        color: '#10b981',
-    },
-    insightBox: {
-        padding: 12,
-        borderRadius: 12,
-    },
-    overspendingInsight: {
-        backgroundColor: 'rgba(239, 68, 68, 0.05)',
-    },
-    savingInsight: {
-        backgroundColor: 'rgba(16, 185, 129, 0.05)',
-    },
-insightText: {
-        fontSize: 14,
-        color: '#ffffff',
-        lineHeight: 20,
-    },
-    // Progress bar styles
-    progressContainer: {
-        height: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 2,
-        marginTop: 8,
-        marginBottom: 16,
-    },
-    progressBar: {
-        height: '100%',
-        borderRadius: 2,
-    },
-    overspendingProgress: {
-        backgroundColor: '#ef4444',
-    },
-    savingProgress: {
-        backgroundColor: '#10b981',
-    },
-    // Animation styles
-    fadeIn: {
-        opacity: 1,
-        transform: [{ translateY: 0 }],
-    },
-    fadeOut: {
-        opacity: 0,
-        transform: [{ translateY: 20 }],
-    },
-    // Additional utility styles
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    spaceBetween: {
-        justifyContent: 'space-between',
-    },
-    center: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    mt16: {
-        marginTop: 16,
-    },
-    mb16: {
-        marginBottom: 16,
-    },
-    ml8: {
-        marginLeft: 8,
-    },
-    mr8: {
-        marginRight: 8,
-    },
-    // Card shadows
-    cardShadow: {
-        shadowColor: '#8257e5',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    // Typography styles
-    textSm: {
-        fontSize: 12,
-        lineHeight: 16,
-    },
-    textBase: {
-        fontSize: 14,
-        lineHeight: 20,
-    },
-    textLg: {
-        fontSize: 16,
-        lineHeight: 24,
-    },
-    textXl: {
-        fontSize: 20,
-        lineHeight: 28,
-    },
-    fontMedium: {
-        fontWeight: '500',
-    },
-    fontSemibold: {
-        fontWeight: '600',
-    },
-    fontBold: {
-        fontWeight: 'bold',
-    },
-    // Colors
-    textPrimary: {
-        color: '#ffffff',
-    },
-    textSecondary: {
-        color: '#8E8E93',
-    },
-    textSuccess: {
-        color: '#10b981',
-    },
-    textDanger: {
-        color: '#ef4444',
-    },
-    bgSuccess: {
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    },
-    bgDanger: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    },
-    // Border styles
-    roundedFull: {
-        borderRadius: 9999,
-    },
-    roundedLg: {
-        borderRadius: 12,
-    },
-    roundedXl: {
-        borderRadius: 16,
-    },
-    // Padding styles
-    p2: {
-        padding: 8,
-    },
-    p4: {
-        padding: 16,
-    },
-    px4: {
-        paddingHorizontal: 16,
-    },
-    py2: {
-        paddingVertical: 8,
     },
 });
 
-export default AnalysisPage;
+export default FinancialAnalysisPage;

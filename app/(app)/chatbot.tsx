@@ -15,6 +15,8 @@ interface ChatbotResponse {
   response: string;
 }
 
+const api_url = process.env.EXPO_PUBLIC_API_URL;
+
 const ChatbotPage = () => {
   const [username, setUsername] = useState<string>("");
   const [apiKey, setApiKey] = useState<string>("");
@@ -42,7 +44,7 @@ const ChatbotPage = () => {
   const fetchChatbotConversation = async () => {
     setLoading(true);
     try {
-      const response = await fetch("https://api.ynab.in/chatbot", {
+      const response = await fetch(`${api_url}/chatbot`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,11 +70,11 @@ const ChatbotPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={['#1a1a1a', '#000000']} style={styles.gradientBackground} />
-      
+
       {/* Enhanced Header */}
       <View style={styles.header}>
-        <Pressable 
-          style={styles.backButton} 
+        <Pressable
+          style={styles.backButton}
           onPress={() => router.back()}
         >
           <LinearGradient
@@ -161,7 +163,7 @@ const ChatbotPage = () => {
             onSubmitEditing={fetchChatbotConversation}
             multiline
           />
-          <Pressable 
+          <Pressable
             style={[styles.sendButton, !userChat && styles.sendButtonDisabled]}
             onPress={fetchChatbotConversation}
             disabled={!userChat}

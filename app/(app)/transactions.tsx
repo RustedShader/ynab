@@ -15,6 +15,7 @@ import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transa
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+const api_url = process.env.EXPO_PUBLIC_API_URL;
 
 const TransactionsPage = () => {
     const router = useRouter();
@@ -22,7 +23,7 @@ const TransactionsPage = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [activeFilter, setActiveFilter] = useState('all');
     const fadeAnim = useState(new Animated.Value(0))[0];
-    const [username, setUsername]  = useState<string>('')
+    const [username, setUsername] = useState<string>('')
     const [api_key, setApiKey] = useState<string>('')
 
     useEffect(() => {
@@ -37,16 +38,16 @@ const TransactionsPage = () => {
     const getSecureUserData = async () => {
         const api_key = await AsyncStorage.getItem('api_key')
         const username = await AsyncStorage.getItem('username')
-    if (api_key && username){
-        setUsername(username);
-        setApiKey(api_key);
-    } 
+        if (api_key && username) {
+            setUsername(username);
+            setApiKey(api_key);
+        }
     }
 
 
     const fetchUserTransactionData = async () => {
         try {
-            const response = await fetch("https://api.ynab.in/fetch_transactions", {
+            const response = await fetch(`${api_url}/fetch_transactions`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -72,13 +73,13 @@ const TransactionsPage = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-          await getSecureUserData();
-          if (username && api_key) {
-            await fetchUserTransactionData();
-          }
+            await getSecureUserData();
+            if (username && api_key) {
+                await fetchUserTransactionData();
+            }
         };
         fetchData();
-      }, [username,api_key]);
+    }, [username, api_key]);
 
     if (loading) {
         return (
@@ -108,15 +109,15 @@ const TransactionsPage = () => {
     }
 
 
- 
+
     const balance_data: { [id: string]: number } = {};
-    const inflow_data: {[id:string]: number} = {}
-    const outflow_data: {[id:string]: number} = {} 
-    const inflow_sender_data: {[id: string]: number} = {}
-    const outflow_sender_data: {[id: string]: number }  = {}
-    var total_money_outflow:  number = 0;
-    var total_money_inflow: number = 0 ;
-        
+    const inflow_data: { [id: string]: number } = {}
+    const outflow_data: { [id: string]: number } = {}
+    const inflow_sender_data: { [id: string]: number } = {}
+    const outflow_sender_data: { [id: string]: number } = {}
+    var total_money_outflow: number = 0;
+    var total_money_inflow: number = 0;
+
 
 
     accountTransactionData.transactions?.forEach((txn: TransactionApiResponse) => {
@@ -125,7 +126,7 @@ const TransactionsPage = () => {
         balance_data[date] = Number(txn._currentBalance);
 
         if (txn._type === "DEBIT") {
-            total_money_outflow += Number(txn._amount); 
+            total_money_outflow += Number(txn._amount);
             outflow_data[date] = (outflow_data[date] || 0) + Number(txn._amount);
             outflow_sender_data[txn._narration] = (outflow_sender_data[txn._narration] || 0) + Number(txn._amount)
         } else if (txn._type === "CREDIT") {
@@ -135,16 +136,16 @@ const TransactionsPage = () => {
         }
     });
 
-    let mostspentKey , mostspentValue = 0  ;
-    for (const[key,value] of Object.entries(outflow_sender_data)){
-        if (value > mostspentValue){
+    let mostspentKey, mostspentValue = 0;
+    for (const [key, value] of Object.entries(outflow_sender_data)) {
+        if (value > mostspentValue) {
             mostspentValue = value;
             mostspentKey = key;
         }
     }
-    let mostinflowKey , mostinflowValue = 0  ;
-    for (const[key,value] of Object.entries(inflow_sender_data)){
-        if (value > mostinflowValue){
+    let mostinflowKey, mostinflowValue = 0;
+    for (const [key, value] of Object.entries(inflow_sender_data)) {
+        if (value > mostinflowValue) {
             mostinflowValue = value;
             mostinflowKey = key;
         }
@@ -238,7 +239,7 @@ const TransactionsPage = () => {
                             <Text style={styles.sectionTitle}>Quick Insights</Text>
                             <Ionicons name="flash" size={20} color="#8257e5" />
                         </View>
-                        
+
                         <View style={styles.insightItem}>
                             <LinearGradient
                                 colors={['rgba(16, 185, 129, 0.1)', 'rgba(6, 95, 70, 0.1)']}
@@ -284,60 +285,60 @@ const TransactionsPage = () => {
                         {accountTransactionData.transactions
                             ?.filter(txn => activeFilter === 'all' || txn._type.toLowerCase() === activeFilter)
                             .map((txn: TransactionApiResponse, index) => (
-                            <Pressable
-                                key={index}
-                                style={({ pressed }) => [
-                                    styles.transactionItem,
-                                    pressed && styles.transactionPressed
-                                ]}
-                            >
-                                <View style={[
-                                    styles.transactionIcon,
-                                    txn._type === "DEBIT" ? styles.outflowIcon : styles.inflowIcon
-                                ]}>
-                                    <Ionicons
-                                        name={txn._type === "DEBIT" ? "arrow-up" : "arrow-down"}
-                                        size={20}
-                                        color={txn._type === "DEBIT" ? "#EF4444" : "#10B981"}
-                                    />
-                                </View>
-                                
-                                <View style={styles.transactionDetails}>
-                                    <Text style={styles.transactionNarration} numberOfLines={1}>
-                                        {txn._narration}
-                                    </Text>
-                                    <Text style={styles.transactionDate}>
-                                        {new Date(txn._transactionTimestamp).toLocaleDateString('en-US', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.transactionAmount}>
-                                    <Text style={[
-                                        styles.amountText,
-                                        txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
-                                    ]}>
-                                        {txn._type === "DEBIT" ? "-" : "+"}
-                                        {formatAmount(Number(txn._amount))}
-                                    </Text>
+                                <Pressable
+                                    key={index}
+                                    style={({ pressed }) => [
+                                        styles.transactionItem,
+                                        pressed && styles.transactionPressed
+                                    ]}
+                                >
                                     <View style={[
-                                        styles.transactionBadge,
-                                        txn._type === "DEBIT" ? styles.outflowBadge : styles.inflowBadge
+                                        styles.transactionIcon,
+                                        txn._type === "DEBIT" ? styles.outflowIcon : styles.inflowIcon
                                     ]}>
-                                        <Text style={[
-                                            styles.badgeText,
-                                            txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
-                                        ]}>
-                                            {txn._type}
+                                        <Ionicons
+                                            name={txn._type === "DEBIT" ? "arrow-up" : "arrow-down"}
+                                            size={20}
+                                            color={txn._type === "DEBIT" ? "#EF4444" : "#10B981"}
+                                        />
+                                    </View>
+
+                                    <View style={styles.transactionDetails}>
+                                        <Text style={styles.transactionNarration} numberOfLines={1}>
+                                            {txn._narration}
+                                        </Text>
+                                        <Text style={styles.transactionDate}>
+                                            {new Date(txn._transactionTimestamp).toLocaleDateString('en-US', {
+                                                day: 'numeric',
+                                                month: 'short',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
                                         </Text>
                                     </View>
-                                </View>
-                            </Pressable>
-                        ))}
+
+                                    <View style={styles.transactionAmount}>
+                                        <Text style={[
+                                            styles.amountText,
+                                            txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
+                                        ]}>
+                                            {txn._type === "DEBIT" ? "-" : "+"}
+                                            {formatAmount(Number(txn._amount))}
+                                        </Text>
+                                        <View style={[
+                                            styles.transactionBadge,
+                                            txn._type === "DEBIT" ? styles.outflowBadge : styles.inflowBadge
+                                        ]}>
+                                            <Text style={[
+                                                styles.badgeText,
+                                                txn._type === "DEBIT" ? styles.outflowText : styles.inflowText
+                                            ]}>
+                                                {txn._type}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            ))}
                     </BlurView>
                 </Animated.View>
             </ScrollView>
@@ -349,6 +350,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000000',
+    },
+    balanceGradient: {
+        padding: 24,
     },
     gradientBackground: {
         position: 'absolute',
@@ -513,7 +517,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginBottom: 32,
     },
-filterIcon: {
+    filterIcon: {
         width: 32,
         height: 32,
         borderRadius: 16,

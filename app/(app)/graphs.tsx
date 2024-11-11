@@ -12,21 +12,25 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Ionicons } from '@expo/vector-icons';
-import { finvu, TransactionEntity } from "@/interfaces/ynab_api";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transaction_api";
+import { YnabApi } from "@/interfaces/ynab_api";
 
+
+const api_url = process.env.EXPO_PUBLIC_API_URL;
 const { width } = Dimensions.get("window");
 
 const Graphs = () => {
     const router = useRouter();
-    const [accountData, setAccountData] = useState<finvu | null>(null);
+    const [accountData, setAccountData] = useState<YnabApi | null>(null);
+    const [accountTransactionData, setAccountTransactonData] = useState<TransactionResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedPeriod, setSelectedPeriod] = useState('week');
     const fadeAnim = useState(new Animated.Value(0))[0];
-    const [username, setUsername]  = useState<string>('')
+    const [username, setUsername] = useState<string>('')
     const [api_key, setApiKey] = useState<string>('')
 
     const commonChartConfig = {
@@ -54,16 +58,40 @@ const Graphs = () => {
     const getSecureUserData = async () => {
         const api_key = await AsyncStorage.getItem('api_key')
         const username = await AsyncStorage.getItem('username')
-    if (api_key && username){
-        setUsername(username);
-        setApiKey(api_key);
-    } 
+        if (api_key && username) {
+            setUsername(username);
+            setApiKey(api_key);
+        }
     }
+    const fetchUserTransactionData = async () => {
+        try {
+            const response = await fetch(`${api_url}/fetch_transactions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Username": username,
+                    "X-API-Key": api_key
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData: TransactionResponse = await response.json();
+            setAccountTransactonData(responseData);
+        } catch (error) {
+            console.error("Error fetching account data:", error);
+        }
+        finally {
+            setLoading(false);
+        }
+    };
 
     const fetchUserData = async () => {
         try {
-            const response = await fetch("https://api.ynab.in/get_user_data", {
-                method: "POST", 
+            const response = await fetch(`${api_url}/get_user_data`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Username": username,
@@ -75,7 +103,7 @@ const Graphs = () => {
                 throw new Error("Failed to fetch data");
             }
 
-            const responseData: finvu = await response.json();
+            const responseData: YnabApi = await response.json();
             setAccountData(responseData);
         } catch (error) {
             console.error("Error fetching account data:", error);
@@ -95,13 +123,14 @@ const Graphs = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-          await getSecureUserData();
-          if (username && api_key) {
-            await fetchUserData();
-          }
+            await getSecureUserData();
+            if (username && api_key) {
+                await fetchUserData();
+                await fetchUserTransactionData();
+            }
         };
         fetchData();
-      }, [username,api_key]);
+    }, [username, api_key]);
 
 
 
@@ -131,13 +160,13 @@ const Graphs = () => {
             </View>
         );
     }
-    const { Transactions } = accountData.Account;
+    // const { Transactions } = accountData.Account;
 
     const balance_data: { [id: string]: number } = {};
     const spending_data: { [id: string]: number } = {};
     const inflow_data: { [id: string]: number } = {};
 
-    Transactions.Transaction?.forEach((txn: TransactionEntity) => {
+    accountTransactionData?.transactions?.forEach((txn: TransactionApiResponse) => {
         const date = new Date(txn._valueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
         balance_data[date] = Number(txn._currentBalance);

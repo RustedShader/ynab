@@ -20,6 +20,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
+const api_url = process.env.EXPO_PUBLIC_API_URL;
+
 // Define proper interfaces
 export interface CreateAccountResponseInterface {
   message: string;
@@ -40,11 +42,11 @@ interface InputFieldProps {
   onBlur?: () => void;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ 
-  icon, 
-  placeholder, 
-  value, 
-  onChangeText, 
+const InputField: React.FC<InputFieldProps> = ({
+  icon,
+  placeholder,
+  value,
+  onChangeText,
   secureTextEntry = false,
   keyboardType = "default",
   showPasswordToggle = false,
@@ -214,35 +216,35 @@ const CreateAccount: React.FC = () => {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      const response = await fetch("https://api.ynab.in/create_user", {
+      const response = await fetch(`${api_url}/create_user`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            "username": formData.username,
-            "password": formData.password,
-            "email_id": formData.emailId,
-            "mobile_number": formData.mobileNumber
+          "Content-Type": "application/json",
+          "username": formData.username,
+          "password": formData.password,
+          "email_id": formData.emailId,
+          "mobile_number": formData.mobileNumber
         },
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const responseData: CreateAccountResponseInterface = await response.json();
-    if (responseData.message == "user_created"){
-      Alert.alert("Created Account", "Account Created Succesfully !");
-      router.push({
-        pathname: "/login",
       });
-    }
-    else{
-      Alert.alert("Error", "Failed to create account. Please try again.");
-      router.back()
-    }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseData: CreateAccountResponseInterface = await response.json();
+      if (responseData.message == "user_created") {
+        Alert.alert("Created Account", "Account Created Succesfully !");
+        router.push({
+          pathname: "/login",
+        });
+      }
+      else {
+        Alert.alert("Error", "Failed to create account. Please try again.");
+        router.back()
+      }
     } catch (error) {
       Alert.alert("Error", "Failed to create account. Please try again.");
     } finally {

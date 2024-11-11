@@ -11,17 +11,17 @@ const { width } = Dimensions.get('window');
 export default function Welcome() {
   const titleAnim = new Animated.Value(0);
   const buttonsAnim = new Animated.Value(0);
-  
+
 
   const checkIfUserLogged = async () => {
     const api_key = await AsyncStorage.getItem('api_key')
     const username = await AsyncStorage.getItem('username')
 
-    if (api_key && username){
-      router.push({pathname: '/dashboard'})
+    if (api_key && username) {
+      router.push({ pathname: '/dashboard' })
     }
-    
-    
+
+
   }
 
   useEffect(() => {
@@ -65,15 +65,17 @@ export default function Welcome() {
         <Text style={styles.subtitle}>Your personal finance companion</Text>
       </Animated.View>
 
-      <Animated.View 
+      <Animated.View
         style={[
           styles.buttonContainer,
           {
             opacity: buttonsAnim,
-            transform: [{ translateY: buttonsAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [50, 0]
-            })}]
+            transform: [{
+              translateY: buttonsAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [50, 0]
+              })
+            }]
           }
         ]}
       >

@@ -15,22 +15,91 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
-import { finvu, TransactionEntity } from '@/interfaces/ynab_api';
+import { YnabApi } from '@/interfaces/ynab_api';
 import { Datum, FinanceNewsAPI } from "@/interfaces/finance_news_api";
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transaction_api";
 
+const api_url = process.env.EXPO_PUBLIC_API_URL;
 const { width } = Dimensions.get("window");
+
+interface CategoryAnalysis {
+    total: number;
+    average: number;
+    volatility: number;
+    frequency: number;
+}
+
+interface ApiResponse {
+    basic_metrics: {
+        cash_inflow: number;
+        cash_outflow: number;
+        savings: number;
+        savings_ratio: number;
+    };
+    transaction_extremes: {
+        highest_expense: {
+            amount: number;
+            description: string;
+            date: string;
+            category: string;
+        };
+        lowest_transaction: {
+            amount: number;
+            description: string;
+            date: string;
+            category: string;
+        };
+    };
+    advanced_metrics: {
+        average_transaction_size: number;
+        spending_velocity: number;
+        category_spending: {
+            [key: string]: number;
+        };
+        recurring_transactions: {
+            [key: string]: number;
+        };
+    };
+    predictive_analytics: {
+        spending_trend: {
+            direction: string,
+            strength: number,
+        }
+    };
+
+    seasonality: {
+        daily_pattern: {
+            Sunday: number,
+            Wednesday: number,
+            Monday: number,
+            Saturday: number,
+            Thursday: number,
+            Friday: number,
+            Tuesday: number
+        }
+    }
+    financial_health: {
+        overall_score: number;
+        category_analysis: {
+            [key: string]: CategoryAnalysis;
+        };
+    };
+}
+
 
 const Dashboard = () => {
     const router = useRouter();
     const [username, setUsername] = useState<string>('')
     const [api_key, setApiKey] = useState<string>('')
-    const [accountData, setAccountData] = useState<finvu | null>(null);
+    const [accountData, setAccountData] = useState<YnabApi | null>(null);
+    const [accountTransactionData, setAccountTransactonData] = useState<TransactionResponse | null>(null);
     const [newsData, setNewsData] = useState<FinanceNewsAPI | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [showBalance, setShowBalance] = useState(false);
+    const [analysisData, setAnalysisData] = useState<ApiResponse | null>(null);
 
     const chartConfig = {
         backgroundColor: 'transparent',
@@ -59,6 +128,8 @@ const Dashboard = () => {
             await getSecureUserData();
             if (username && api_key) {
                 await fetchUserData();
+                await fetchUserTransactionData();
+                await fetchAnalysisData();
                 await fetchLatestFinanceNews();
             }
         };
@@ -76,9 +147,9 @@ const Dashboard = () => {
 
     }
 
-    const fetchUserData = async () => {
+    const fetchUserTransactionData = async () => {
         try {
-            const response = await fetch("https://api.ynab.in/get_user_data", {
+            const response = await fetch(`${api_url}/fetch_transactions`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -91,13 +162,68 @@ const Dashboard = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const responseData: finvu = await response.json();
+            const responseData: TransactionResponse = await response.json();
+            setAccountTransactonData(responseData);
+        } catch (error) {
+            console.error("Error fetching account data:", error);
+        }
+        finally {
+            if (!newsData && !accountData) {
+                setLoading(true);
+            } else {
+                setLoading(false);
+            }
+        }
+    };
+
+
+    const fetchAnalysisData = async (): Promise<void> => {
+        try {
+            const response = await fetch(`${api_url}/user_financial_data`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": api_key
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData: ApiResponse = await response.json();
+            setAnalysisData(responseData);
+        } catch (error) {
+            console.error("Error fetching analysis data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchUserData = async () => {
+        try {
+            const response = await fetch(`${api_url}/get_user_data`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": api_key
+                },
+            });
+
+            if (!response.ok) {
+                AsyncStorage.removeItem('api_key')
+                AsyncStorage.removeItem('username')
+                throw new Error(`HTTP error! status: ${response.status}`);
+
+            }
+
+            const responseData: YnabApi = await response.json();
             setAccountData(responseData);
         } catch (error) {
             console.error("Error fetching account data:", error);
         }
         finally {
-            if (!newsData) {
+            if (!newsData && !accountTransactionData) {
                 setLoading(true);
             } else {
                 setLoading(false)
@@ -107,7 +233,7 @@ const Dashboard = () => {
 
     const fetchLatestFinanceNews = async () => {
         try {
-            const response = await fetch("https://api.ynab.in/get_latest_finance_news", {
+            const response = await fetch(`${api_url}/get_latest_finance_news`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -159,10 +285,12 @@ const Dashboard = () => {
         );
     }
 
-    const { Profile, Summary, Transactions } = accountData.Account;
+    accountTransactionData?.transactions
+    const Profile = accountData
+    const user_balance = accountTransactionData?.transactions[accountTransactionData?.transactions.length - 1]._currentBalance;
 
     const balance_data: { [id: string]: number } = {};
-    Transactions.Transaction?.forEach((txn: TransactionEntity) => {
+    accountTransactionData?.transactions?.forEach((txn: TransactionApiResponse) => {
         const date = new Date(txn._valueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         balance_data[date] = Number(txn._currentBalance);
     });
@@ -199,9 +327,9 @@ const Dashboard = () => {
                     <View style={styles.headerContent}>
                         <View>
                             <Text style={styles.welcomeText}>Welcome back,</Text>
-                            <Text style={styles.headerTitle}>{username}</Text>
+                            <Text style={styles.headerTitle}>{Profile.username}</Text>
                         </View>
-                        <Pressable style={styles.profileButton} onPress={() => router.navigate({pathname: '/profile'})}>
+                        <Pressable style={styles.profileButton} onPress={() => router.navigate({ pathname: '/profile' })}>
                             <LinearGradient
                                 colors={['#8257e5', '#6833e4']}
                                 style={styles.profileGradient}
@@ -225,7 +353,7 @@ const Dashboard = () => {
                                 style={styles.balanceRow}
                             >
                                 <Text style={styles.balanceAmount}>
-                                    {showBalance ? formatAmount(Summary._currentBalance) : '••••••'}
+                                    {showBalance ? formatAmount(Number(user_balance)) : '••••••'}
                                 </Text>
                                 <Ionicons
                                     name={showBalance ? "eye-off" : "eye"}
@@ -235,7 +363,7 @@ const Dashboard = () => {
                             </Pressable>
                             <View style={styles.balanceFooter}>
                                 <Ionicons name="location" size={12} color="#8E8E93" />
-                                <Text style={styles.accountInfo}>{Summary._branch}</Text>
+                                <Text style={styles.accountInfo}>{Profile.bank_branch}</Text>
                             </View>
                         </LinearGradient>
                     </BlurView>
@@ -268,123 +396,123 @@ const Dashboard = () => {
                     />
                 </View>
                 <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Analyzed Data</Text>
-                <Pressable
-                    onPress={() => router.navigate({ pathname: "/analysis", params: { username: username } })}
-                    style={styles.seeAllButton}
-                >
-                    <Text style={styles.seeAllText}>See All</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                </Pressable>
-            </View>
-            <View style={styles.metricsContainer}>
-                <Pressable style={styles.metricCard}>
-                    <LinearGradient
-                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                        style={styles.metricGradient}
-                    >
-                        <View style={styles.metricIcon}>
-                            <Ionicons name="trending-up" size={24} color="#8257e5" />
-                        </View>
-                        <Text style={styles.metricLabel}>Spending Trend</Text>
-                        <Text style={styles.metricValue}>+12.5%</Text>
-                    </LinearGradient>
-                </Pressable>
-                <Pressable style={styles.metricCard}>
-                    <LinearGradient
-                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                        style={styles.metricGradient}
-                    >
-                        <View style={styles.metricIcon}>
-                            <Ionicons name="pie-chart" size={24} color="#8257e5" />
-                        </View>
-                        <Text style={styles.metricLabel}>Categories</Text>
-                        <Text style={styles.metricValue}>10 Active</Text>
-                    </LinearGradient>
-                </Pressable>
-            </View>
-        </View>
-
-        {/* Chatbot Section */}
-        <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Chatbot Assistant</Text>
-                <Pressable
-                    onPress={() => router.navigate({ pathname: "/chatbot", params: { username: username } })}
-                    style={styles.seeAllButton}
-                >
-                    <Text style={styles.seeAllText}>Chat Now</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                </Pressable>
-            </View>
-            <Pressable style={styles.chatbotCard}>
-                <LinearGradient
-                    colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                    style={styles.chatbotGradient}
-                >
-                    <View style={styles.chatbotContent}>
-                        <View style={styles.chatbotIcon}>
-                            <Ionicons name="chatbubble-ellipses" size={32} color="#8257e5" />
-                        </View>
-                        <Text style={styles.chatbotTitle}>Ask me anything about your finances</Text>
-                        <Text style={styles.chatbotSubtitle}>Get instant insights and recommendations</Text>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Analyzed Data</Text>
+                        <Pressable
+                            onPress={() => router.navigate({ pathname: "/analysis", params: { username: username } })}
+                            style={styles.seeAllButton}
+                        >
+                            <Text style={styles.seeAllText}>See All</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                        </Pressable>
                     </View>
-                </LinearGradient>
-            </Pressable>
-        </View>
+                    <View style={styles.metricsContainer}>
+                        <Pressable style={styles.metricCard}>
+                            <LinearGradient
+                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                                style={styles.metricGradient}
+                            >
+                                <View style={styles.metricIcon}>
+                                    <Ionicons name={analysisData?.predictive_analytics.spending_trend.direction === 'increasing' ? 'trending-up' : 'trending-down'} size={24} color="#8257e5" />
+                                </View>
+                                <Text style={styles.metricLabel}>Spending Trend</Text>
+                                <Text style={styles.metricValue}>{analysisData?.basic_metrics.savings_ratio}%</Text>
+                            </LinearGradient>
+                        </Pressable>
+                        <Pressable style={styles.metricCard}>
+                            <LinearGradient
+                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                                style={styles.metricGradient}
+                            >
+                                <View style={styles.metricIcon}>
+                                    <Ionicons name="pie-chart" size={24} color="#8257e5" />
+                                </View>
+                                <Text style={styles.metricLabel}>Categories</Text>
+                                <Text style={styles.metricValue}>10 Active</Text>
+                            </LinearGradient>
+                        </Pressable>
+                    </View>
+                </View>
 
-        {/* Milestones and Goals Section */}
-        <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Milestones & Goals</Text>
-                <Pressable
-                    onPress={() => router.navigate({ pathname: "/milestone", params: { username: username } })}
-                    style={styles.seeAllButton}
-                >
-                    <Text style={styles.seeAllText}>View All</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#8257e5" />
-                </Pressable>
-            </View>
-            <View style={styles.goalsContainer}>
-                <Pressable style={styles.goalCard}>
-                    <LinearGradient
-                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                        style={styles.goalGradient}
-                    >
-                        <View style={styles.goalHeader}>
-                            <View style={styles.goalIcon}>
-                                <Ionicons name="car" size={24} color="#8257e5" />
+                {/* Chatbot Section */}
+                <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Chatbot Assistant</Text>
+                        <Pressable
+                            onPress={() => router.navigate({ pathname: "/chatbot", params: { username: username } })}
+                            style={styles.seeAllButton}
+                        >
+                            <Text style={styles.seeAllText}>Chat Now</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                        </Pressable>
+                    </View>
+                    <Pressable style={styles.chatbotCard}>
+                        <LinearGradient
+                            colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                            style={styles.chatbotGradient}
+                        >
+                            <View style={styles.chatbotContent}>
+                                <View style={styles.chatbotIcon}>
+                                    <Ionicons name="chatbubble-ellipses" size={32} color="#8257e5" />
+                                </View>
+                                <Text style={styles.chatbotTitle}>Ask me anything about your finances</Text>
+                                <Text style={styles.chatbotSubtitle}>Get instant insights and recommendations</Text>
                             </View>
-                            <Text style={styles.goalProgress}>75%</Text>
-                        </View>
-                        <Text style={styles.goalTitle}>New Car</Text>
-                        <View style={styles.progressBar}>
-                            <View style={[styles.progressFill, { width: '75%' }]} />
-                        </View>
-                        <Text style={styles.goalAmount}>$15,000 / $20,000</Text>
-                    </LinearGradient>
-                </Pressable>
-                <Pressable style={styles.goalCard}>
-                    <LinearGradient
-                        colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
-                        style={styles.goalGradient}
-                    >
-                        <View style={styles.goalHeader}>
-                            <View style={styles.goalIcon}>
-                                <Ionicons name="home" size={24} color="#8257e5" />
-                            </View>
-                            <Text style={styles.goalProgress}>40%</Text>
-                        </View>
-                        <Text style={styles.goalTitle}>House Down Payment</Text>
-                        <View style={styles.progressBar}>
-                            <View style={[styles.progressFill, { width: '40%' }]} />
-                        </View>
-                        <Text style={styles.goalAmount}>$20,000 / $50,000</Text>
-                    </LinearGradient>
-                </Pressable>
-            </View>
-        </View>
+                        </LinearGradient>
+                    </Pressable>
+                </View>
+
+                {/* Milestones and Goals Section */}
+                <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Milestones & Goals</Text>
+                        <Pressable
+                            onPress={() => router.navigate({ pathname: "/milestone", params: { username: username } })}
+                            style={styles.seeAllButton}
+                        >
+                            <Text style={styles.seeAllText}>View All</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#8257e5" />
+                        </Pressable>
+                    </View>
+                    <View style={styles.goalsContainer}>
+                        <Pressable style={styles.goalCard}>
+                            <LinearGradient
+                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                                style={styles.goalGradient}
+                            >
+                                <View style={styles.goalHeader}>
+                                    <View style={styles.goalIcon}>
+                                        <Ionicons name="car" size={24} color="#8257e5" />
+                                    </View>
+                                    <Text style={styles.goalProgress}>75%</Text>
+                                </View>
+                                <Text style={styles.goalTitle}>New Car</Text>
+                                <View style={styles.progressBar}>
+                                    <View style={[styles.progressFill, { width: '75%' }]} />
+                                </View>
+                                <Text style={styles.goalAmount}>₹ 15,000 / 20,000</Text>
+                            </LinearGradient>
+                        </Pressable>
+                        <Pressable style={styles.goalCard}>
+                            <LinearGradient
+                                colors={['rgba(130, 87, 229, 0.1)', 'rgba(104, 51, 228, 0.1)']}
+                                style={styles.goalGradient}
+                            >
+                                <View style={styles.goalHeader}>
+                                    <View style={styles.goalIcon}>
+                                        <Ionicons name="home" size={24} color="#8257e5" />
+                                    </View>
+                                    <Text style={styles.goalProgress}>40%</Text>
+                                </View>
+                                <Text style={styles.goalTitle}>House Down Payment</Text>
+                                <View style={styles.progressBar}>
+                                    <View style={[styles.progressFill, { width: '40%' }]} />
+                                </View>
+                                <Text style={styles.goalAmount}>₹ 20,000 / 50,000</Text>
+                            </LinearGradient>
+                        </Pressable>
+                    </View>
+                </View>
 
                 {/* Enhanced Transactions Section */}
                 <View style={styles.transactionsContainer}>
@@ -398,7 +526,7 @@ const Dashboard = () => {
                             <Ionicons name="chevron-forward" size={16} color="#8257e5" />
                         </Pressable>
                     </View>
-                    {Transactions.Transaction?.slice(0, 5).map((txn: TransactionEntity, index) => (
+                    {accountTransactionData?.transactions.slice(0, 5).map((txn: TransactionApiResponse, index) => (
                         <Pressable
                             key={index}
                             style={({ pressed }) => [

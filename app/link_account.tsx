@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
+const api_url = process.env.EXPO_PUBLIC_API_URL;
+
 const { width } = Dimensions.get('window');
 
 interface accountLinkedApiResponse {
@@ -22,54 +25,23 @@ const LinkAccount = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
   const router = useRouter();
-  const [username, setUsername]  = useState<string>('')
+  const [username, setUsername] = useState<string>('')
   const [api_key, setApiKey] = useState<string>('')
- 
+
   const getSecureUserData = async () => {
     const api_key = await AsyncStorage.getItem('api_key')
     const username = await AsyncStorage.getItem('username')
-if (api_key && username){
-    setUsername(username);
-    setApiKey(api_key);
-} 
-}
-
-
-const loadTransactionSorter = async () => {
-  setLoading(true);
-  try {
-    const response = await fetch("https://api.ynab.in/create_user_data", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Username: username,
-        "X-API-Key": api_key
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (api_key && username) {
+      setUsername(username);
+      setApiKey(api_key);
     }
-
-    const responseData: accountLinkedApiResponse = await response.json();
-      if (responseData.message === "added_initial_transacrtions") {
-              await linkBankAccount();
-              }
-              else{
-                Alert.alert("Authentication Failed", "Please check your credentials and try again."); 
-              }
-  } catch (error) {
-    console.error("Error fetching account data:", error);
-    Alert.alert("Authentication Failed", "Please check your credentials and try again.");
-  } finally {
-    setLoading(false);
   }
-};
 
-  const linkBankAccount = async () => {
+
+  const loadTransactionSorter = async () => {
     setLoading(true);
     try {
-      const response = await fetch("https://api.ynab.in/link_bank_account", {
+      const response = await fetch(`${api_url}/create_user_data`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,11 +55,42 @@ const loadTransactionSorter = async () => {
       }
 
       const responseData: accountLinkedApiResponse = await response.json();
-        if (responseData.message === "bank_account_linked") {
-          router.push({
-            pathname: "/login",
-          });
-        }
+      if (responseData.message === "added_initial_transacrtions") {
+        await linkBankAccount();
+      }
+      else {
+        Alert.alert("Authentication Failed", "Please check your credentials and try again.");
+      }
+    } catch (error) {
+      console.error("Error fetching account data:", error);
+      Alert.alert("Authentication Failed", "Please check your credentials and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const linkBankAccount = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${api_url}/link_bank_account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Username: username,
+          "X-API-Key": api_key
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseData: accountLinkedApiResponse = await response.json();
+      if (responseData.message === "bank_account_linked") {
+        router.push({
+          pathname: "/login",
+        });
+      }
     } catch (error) {
       console.error("Error fetching account data:", error);
       Alert.alert("Authentication Failed", "Please check your credentials and try again.");
@@ -114,7 +117,7 @@ const loadTransactionSorter = async () => {
     "Yes Bank": "https://cdn-kqwjkkg45njv.vultrcdn.com/yes_bank_logo.png"
   };
 
-  useEffect( () => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
@@ -127,7 +130,7 @@ const loadTransactionSorter = async () => {
       await getSecureUserData();
     };
     fetchData();
-  }, [username,api_key]);
+  }, [username, api_key]);
 
 
   if (loading) {
@@ -202,17 +205,17 @@ const loadTransactionSorter = async () => {
             </View>
 
             <TouchableOpacity
-                style={styles.loginButton}
-                onPress={loadTransactionSorter}
-                activeOpacity={0.8}
+              style={styles.loginButton}
+              onPress={loadTransactionSorter}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#8257e5', '#6833e4']}
+                style={styles.loginButtonGradient}
               >
-                <LinearGradient
-                  colors={['#8257e5', '#6833e4']}
-                  style={styles.loginButtonGradient}
-                >
-                  <Text style={styles.loginButtonText}>Link Bank Account</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                <Text style={styles.loginButtonText}>Link Bank Account</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </ScrollView>

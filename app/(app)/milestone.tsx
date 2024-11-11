@@ -19,6 +19,7 @@ import {
     Alert
 } from "react-native";
 
+const api_url = process.env.EXPO_PUBLIC_API_URL;
 const MilestonePage = () => {
     const router = useRouter();
     const [accountTransactionData, setAccountTransactonData] = useState<TransactionResponse | null>(null);
@@ -50,7 +51,7 @@ const MilestonePage = () => {
 
     const fetchUserTransactionData = async () => {
         try {
-            const response = await fetch("https://api.ynab.in/fetch_transactions", {
+            const response = await fetch(`${api_url}/fetch_transactions`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

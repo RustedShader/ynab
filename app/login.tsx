@@ -21,6 +21,8 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
+const api_url = process.env.EXPO_PUBLIC_API_URL;
 const { width, height } = Dimensions.get('window');
 
 export interface LoginResponseInterface {
@@ -171,7 +173,7 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("https://api.ynab.in/login", {
+      const response = await fetch(`${api_url}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -243,7 +245,7 @@ const Login = () => {
           >
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.push({pathname: '/'})}
+              onPress={() => router.push({ pathname: '/' })}
             >
               <Ionicons name="arrow-back" size={24} color="#ffffff" />
             </TouchableOpacity>
