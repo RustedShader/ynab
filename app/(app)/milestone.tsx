@@ -19,7 +19,7 @@ import {
     Alert
 } from "react-native";
 
-const api_url = process.env.EXPO_PUBLIC_API_URL;
+const api_url = "https://api.ynab.in"
 const MilestonePage = () => {
     const router = useRouter();
     const [accountTransactionData, setAccountTransactonData] = useState<TransactionResponse | null>(null);

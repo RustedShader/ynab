@@ -20,7 +20,7 @@ import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transa
 import { YnabApi } from "@/interfaces/ynab_api";
 
 
-const api_url = process.env.EXPO_PUBLIC_API_URL;
+const api_url = "https://api.ynab.in"
 const { width } = Dimensions.get("window");
 
 const Graphs = () => {

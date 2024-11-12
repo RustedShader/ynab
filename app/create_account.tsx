@@ -20,7 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
-const api_url = process.env.EXPO_PUBLIC_API_URL;
+const api_url = "https://api.ynab.in"
 
 // Define proper interfaces
 export interface CreateAccountResponseInterface {

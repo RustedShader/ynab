@@ -15,7 +15,7 @@ import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transa
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-const api_url = process.env.EXPO_PUBLIC_API_URL;
+const api_url = "https://api.ynab.in"
 
 const TransactionsPage = () => {
     const router = useRouter();

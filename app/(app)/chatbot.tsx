@@ -15,7 +15,7 @@ interface ChatbotResponse {
   response: string;
 }
 
-const api_url = process.env.EXPO_PUBLIC_API_URL;
+const api_url = "https://api.ynab.in"
 
 const ChatbotPage = () => {
   const [username, setUsername] = useState<string>("");

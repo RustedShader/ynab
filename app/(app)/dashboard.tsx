@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TransactionApiResponse, TransactionResponse } from "@/interfaces/transaction_api";
 
-const api_url = process.env.EXPO_PUBLIC_API_URL;
+const api_url = "https://api.ynab.in"
 const { width } = Dimensions.get("window");
 
 interface CategoryAnalysis {
@@ -168,7 +168,7 @@ const Dashboard = () => {
             console.error("Error fetching account data:", error);
         }
         finally {
-            if (!newsData && !accountData) {
+            if (!newsData && !accountData && !analysisData) {
                 setLoading(true);
             } else {
                 setLoading(false);
@@ -196,7 +196,11 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Error fetching analysis data:", error);
         } finally {
-            setLoading(false);
+            if (!newsData && !accountData && !accountTransactionData) {
+                setLoading(true);
+            } else {
+                setLoading(false);
+            }
         }
     };
 
@@ -223,10 +227,10 @@ const Dashboard = () => {
             console.error("Error fetching account data:", error);
         }
         finally {
-            if (!newsData && !accountTransactionData) {
+            if (!newsData && !accountTransactionData && !analysisData) {
                 setLoading(true);
             } else {
-                setLoading(false)
+                setLoading(false);
             }
         }
     };
