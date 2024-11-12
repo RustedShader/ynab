@@ -30,6 +30,12 @@ The YNAB app is built with a scalable, secure architecture using Vultr’s cloud
 
 ## 🚀 Get Started
 
+### Testing
+
+You can try out the app's demo at [ynab.in](https://ynab.in) to explore its features firsthand.
+
+Alternatively, to test the app on your mobile device with the Expo Go app, scan the QR code displayed in the Expo CLI output.
+
 ### Prerequisites
 
 - **System Requirements**: Node.js (LTS version recommended)
